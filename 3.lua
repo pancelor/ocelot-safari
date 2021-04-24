@@ -91,6 +91,10 @@ function check_palpick()
    self.pal[i1],self.pal[i2]=self.pal[i2],self.pal[i1]
    self:set_pals()
   end,
+  reset_hb=function(self,...)
+   return 1,104,23,7,...
+  end,
+  -- hoverreset=false,
   update=function(self)
    self.mx,self.my=poll_mouse()
 
@@ -121,6 +125,19 @@ function check_palpick()
     end
    end
 
+   -- reset
+   self.hoverreset=rect_collide(self.mx,self.my,1,1,self:reset_hb())
+   if self.hoverreset and mbtnr(lmb) then
+    for i=0,15 do
+     self.pal[i]=i
+    end
+    for i=16,31 do
+     self.pal[i]=0x80|(i&0xf)
+    end
+    self:set_pals()
+    choicei=nil
+   end
+
    if choicei then
     if self.choicei then
      self:swap(self.choicei,choicei)
@@ -130,10 +147,12 @@ function check_palpick()
      self.choicei=choicei
     end
    end
+
    self.firstframe=nil
   end,
   draw=function(self)
    old_drw()
+   -- colors
    rectfillwh(0,111,128,1,0)
    for i=0,31 do
     local fillc=i&0xf
@@ -144,6 +163,10 @@ function check_palpick()
     rectfillwh(self:bounds(i, fillc))
     fillp()
    end
+
+   -- reset
+   rectfillwh(self:reset_hb( self.hoverreset and 8 or 0))
+   print("\015reset",3,105,7)
 
    -- crosshair
    for d=2,3 do
