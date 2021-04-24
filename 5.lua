@@ -31,3 +31,7 @@ function draw_s(self,s)
  palt()
 end
 
+function xy_from_rot(rot, x,y)
+ rot%=4
+ return (x or 0)+rotx[rot],(y or 0)+roty[rot]
+end
