@@ -79,6 +79,13 @@ function poll_btns()
   return rot_from_but[entry.b]
  end
 end
+function buts_waiting()
+ for e in all(buts) do
+  if not e.seen then
+   return true
+  end
+ end
+end
 
 function load_actors()
  actor_machete{x=4,y=4}
@@ -87,6 +94,10 @@ function load_actors()
  actor_vine{x=6,y=8}
  actor_vine{x=6,y=9}
  actor_vine{x=6,y=10}
+ actor_axehead{x=2,y=3}
+ actor_tree{x=2,y=5}
+ actor_tree{x=2,y=6}
+ actor_wood{x=2,y=8}
  mouse=make_actor{
   x=0,
   y=0,
@@ -145,6 +156,9 @@ function actor_player(...)
 
    if do_voxy(self) then
     -- handle items
+    if self.item and self.item.dead then
+     self.item=nil
+    end
     if btn(4) and not self.item then
      for dr in all{0,2,1,3} do
       local rot=(self.lastrot+dr)%4
@@ -194,10 +208,12 @@ function actor_player(...)
  },...)
 end
 
-function apply_event(name,rot,x,y)
+function apply_event(name,name2,rot,x,y)
  local ob=hit(x,y)
  if ob and ob[name] then
   ob[name](ob,rot)
+ elseif ob and ob[name2] then
+  ob[name2](ob,rot)
  end
  actor_x{x=x,y=y}
 end
@@ -214,12 +230,14 @@ function actor_machete(...)
   end,
   move=function(self,rot)
    move(self,rot)
+   -- actor_x{x=self.x,y=self.y}
   end,
   swing=function(self,myrot,plrot)
    self:move(myrot)
-   apply_event("on_machete",myrot,xy_from_rot(plrot+2,self.prevx,self.prevy))
-   apply_event("on_machete",myrot,xy_from_rot(plrot+2,self.x,self.y))
-   apply_event("on_machete",plrot,xy_from_rot(myrot,self.x,self.y))
+   local plrot2=(plrot+2)%4
+   apply_event("on_machete","move",plrot2,xy_from_rot(plrot2,self.prevx,self.prevy))
+   apply_event("on_machete","move",plrot2,xy_from_rot(plrot2,self.x,self.y))
+   apply_event("on_machete","move",myrot,xy_from_rot(myrot,self.x,self.y))
    -- actor_swipe{
    --  x=self.x,
    --  y=self.y,
@@ -257,11 +275,129 @@ end
 function actor_vine(...)
  return make_actor({
   z=-10,
-  on_machete=die,
   ani={
    3,
    palt=0,
   },
+  on_machete=function(self)
+   actor_fiber{x=self.x,y=self.y}
+   die(self)
+  end,
+ },...)
+end
+
+function actor_fiber(...)
+ return make_actor({
+  z=-10,
+  hp=2,
+  ani={
+   5,
+   palt=0,
+  },
+  update=do_voxy,
+  move=move,
+  on_machete=function(self)
+   self.hp-=1
+   if self.hp>0 then
+    self.ani.pal=parse"15=5,14=9,13=10"
+   else
+    die(self)
+   end
+  end,
+ },...)
+end
+
+function try_combine(ob1,ob2)
+ function match(p1,p2)
+  return ob1[p1] and ob2[p2]
+      or ob1[p2] and ob2[p1]
+ end
+ if match("is_axehead","is_handle") then
+  die(ob1)
+  die(ob2)
+  return actor_axe{x=ob1.x,y=ob1.y}
+ end
+end
+
+function actor_axehead(...)
+ return make_actor({
+  z=-10,
+  is_axehead=true,
+  ani={
+   6,
+   palt=0,
+  },
+  update=do_voxy,
+  move=move,
+  bump=function(self,ob,rot)
+   if try_combine(self,ob) then
+    --
+   elseif ob.move then
+    ob:move(rot)
+   end
+  end,
+ },...)
+end
+
+function actor_axe(...)
+ return make_actor({
+  z=-10,
+  ani={
+   13,
+   palt=0,
+  },
+  update=do_voxy,
+  move=move,
+  swing=function(self,myrot,plrot)
+   self:move(myrot)
+   local plrot2=(plrot+2)%4
+   apply_event("on_axe","move",myrot,xy_from_rot(myrot,self.x,self.y))
+   apply_event("on_axe","move",plrot2,xy_from_rot(plrot2,self.x,self.y))
+   apply_event("on_axe","move",myrot,xy_from_rot(myrot,xy_from_rot(plrot2,self.x,self.y)))
+  end,
+  -- bump=function(self,ob,rot)
+  --  if ob.on_axe then
+  --   ob:on_axe(rot)
+  --   local x,y=xy_from_rot(rot,self.x,self.y)
+  --   actor_x{x=x,y=y}
+  --  elseif ob.move then
+  --   ob:move(rot)
+  --  end
+  -- end,
+ },...)
+end
+
+function actor_tree(...)
+ return make_actor({
+  z=-10,
+  ani={
+   7,
+   palt=0,
+  },
+  on_axe=function(self)
+   actor_wood{x=self.x,y=self.y}
+   die(self)
+  end,
+ },...)
+end
+
+function actor_wood(...)
+ return make_actor({
+  z=-10,
+  is_handle=true,
+  ani={
+   12,
+   palt=0,
+  },
+  move=move,
+  update=do_voxy,
+  bump=function(self,ob,rot)
+   if try_combine(self,ob) then
+    --
+   elseif ob.move then
+    ob:move(rot)
+   end
+  end
  },...)
 end
 
@@ -342,7 +478,9 @@ end
 
 -- moves self.vox->0 and self.voy->0
 -- returns whether they are at 0
-function do_voxy(self,spd)
+function do_voxy(self)
+ local spd=buts_waiting() and 2
+  or 1
  local done=true
  if self.vox then
   self.vox=approach(self.vox,0,spd)
