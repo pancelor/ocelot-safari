@@ -108,7 +108,6 @@ function load_actors()
   update=function(self)
   end,
   draw=nocam(function(self)
-   grid(8)
    if dev then
     print("dev",0,0,7)
    end
@@ -120,12 +119,13 @@ function load_actors()
    local cx,cy=pl.x,pl.y
    -- update camera
    camera(
-    approach(%0x5f28,mid(8,cx,worldw-8)*8-64),
-    approach(%0x5f2a,mid(8,cy,worldh-8)*8-64)
+    approach(%0x5f28,mid(cx*_12-64,worldw*_12-128)),
+    approach(%0x5f2a,mid(cy*_12-64,worldh*_12-128))
    )
   end,
   draw=function(self)
-   map()
+   -- map()
+   grid(10)
   end,
  }
 end
@@ -151,7 +151,7 @@ function actor_player(...)
      for dr in all{0,2,1,3} do
       local rot=(self.lastrot+dr)%4
       local item=hit(self.x+rotx[rot],self.y+roty[rot])
-      if item then
+      if item and item.move then
        self.item=item
        break
       end
@@ -173,30 +173,35 @@ function actor_player(...)
 
    -- flp
    if rot==0 then
-    self.ani.flp=true
-   elseif rot==1 then
-    self.ani.flp=false
+    self.ani.flpx=false
+   elseif rot==2 then
+    self.ani.flpx=true
    end
 
-   if self.item then
-    local dx,dy=self.prevx-self.item.x,self.prevy-self.item.y
+   local item=self.item
+   if item then
+    local dx,dy=self.prevx-item.x,self.prevy-item.y
     for r=0,3 do
      if rotx[r]==dx and roty[r]==dy then
-      if rot~=r and self.item.swing then
-       self.item:swing(r,rot)
+      if rot~=r and item.swing then
+       item:swing(r,rot)
       else
-       self.item:move(r)
+       item:move(r)
       end
       break
      end
     end
    end
   end,
-  draw=function(self)
-   draw_s(self)
-   rectfillwh(self.x*_12,self.y*_12,1,1,8)
-  end,
  },...)
+end
+
+function apply_event(name,rot,x,y)
+ local ob=hit(x,y)
+ if ob and ob[name] then
+  ob[name](ob,rot)
+ end
+ actor_x{x=x,y=y}
 end
 
 function actor_machete(...)
@@ -209,23 +214,26 @@ function actor_machete(...)
   init=function(self)
    --stub
   end,
-  move=function(self,...)
-   move(self,...)
-   self.reds={}
+  move=function(self,rot)
+   move(self,rot)
   end,
-  reds={},
   swing=function(self,myrot,plrot)
    self:move(myrot)
-   local arr={}
-   add(arr,pack(9,xy_from_rot(plrot+2,self.prevx,self.prevy)))
-   add(arr,pack(10,xy_from_rot(plrot+2,self.x,self.y)))
-   add(arr,pack(11,xy_from_rot(myrot,self.x,self.y)))
-   --#todo kill reds, use these as hitboxes
-   self.reds=arr
+   apply_event("on_machete",myrot,xy_from_rot(plrot+2,self.prevx,self.prevy))
+   apply_event("on_machete",myrot,xy_from_rot(plrot+2,self.x,self.y))
+   apply_event("on_machete",plrot,xy_from_rot(myrot,self.x,self.y))
+   -- actor_swipe{
+   --  x=self.x,
+   --  y=self.y,
+   --  rot1=myrot,
+   --  rot2=plrot,
+   -- }
   end,
   bump=function(self,ob,rot)
    if ob.on_machete then
-    ob:on_machete()
+    ob:on_machete(rot)
+    local x,y=xy_from_rot(rot,self.x,self.y)
+    actor_x{x=x,y=y}
    elseif ob.move then
     ob:move(rot)
    end
@@ -244,10 +252,6 @@ function actor_machete(...)
   draw=function(self)
    --stub
    draw_s(self)
-   for r in all(self.reds) do
-    local c,x,y=unpack(r)
-    rectwh(x*_12,y*_12,_11,_11,c)
-   end
   end,
  },...)
 end
@@ -262,6 +266,46 @@ function actor_vine(...)
   },
  },...)
 end
+
+function actor_x(...)
+ return make_actor({
+  z=-100,
+  nohit=true,
+  ani={
+   4,
+  },
+  script=cocreate(function(self)
+   wait(5)
+   self.ani.pal=parse"8=5"
+   wait(5)
+   die(self)
+  end),
+ },...)
+end
+
+-- function actor_swipe(...)
+--  return make_actor({
+--   z=-100,
+--   nohit=true,
+--   ani={
+--    4,
+--   },
+--   script=cocreate(function(self)
+--    wait(5)
+--    self.ani.pal=parse"8=5"
+--    wait(5)
+--    die(self)
+--   end),
+--   draw=function(self)
+--    local x0,y0=self.x,self.y
+--    pal(self.ani.pal or {})
+--    spr12(4,toscreen(xy_from_rot(self.rot1,x0,y0)))
+--    spr12(4,toscreen(xy_from_rot(self.rot2+2,x0,y0)))
+--    spr12(4,toscreen(xy_from_rot(self.rot1+2,xy_from_rot(self.rot2+2,x0,y0))))
+--    unpal(self.ani.pal or {})
+--   end,
+--  },...)
+-- end
 
 -- function move_towards(self,x,y)
 --  local dx,dy=x-self.x,y-self.y
@@ -284,7 +328,7 @@ function move(self,rot)
   end
  end
 
- if hit(nx,ny) then
+ if hit(nx,ny) or not inbounds(nx,ny) then
   self.vox,self.voy=_12/2*dx,_12/2*dy
  else
   self.prevx,self.prevy,self.x,self.y=self.x,self.y,nx,ny

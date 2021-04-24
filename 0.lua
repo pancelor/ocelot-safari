@@ -1,47 +1,13 @@
 -- template
 --  BY PANCELOR
 
--- use this as a template when
--- starting a new project.
--- tab 0: engine code
--- tab 1: game code
--- tab 2: helper+debug functions.
--- tab 3: palette picker.
--- tab 4: dialogue boxes
-
--- other places to find tech:
---  collision: upgo.p8
---  2d vector: eh yunklops.p8? not polished
---  scrolling maps: upgo.p8. also remains.p8 was _super_ simple; probably better
---  entity handling system: pandc.p8? birthday? escalatorworld?
---  menu tech: escalatorworld.p8
---  persistent data: escalatorworld.p8
---  light/fading: lightdemo.p8, mai-chan, escalatorworld.p8
---  copy url stuff: escalatorworld.p8
---  rect intersect: ? pandc.p8?
---  actor/component system: mmash.p8. remains.p8 seems pretty good too
---  celeste-style fractional movement: remains.p8
---  particles: ew.p8
---  map sliding: pork.p8(token-optimized) remains.p8. puz.p8 upgo?
---  simple map "spritesheet packing": puz.p8 "init_level_loader"
---  easing/lerp animations: tech/easing.p8
---    scripts / scrlerp (lol)
---  timer code: linecook.p8 mothbear.p8
---  dynamic music: linecook.p8 has a good start. probably want next_music to be more of a "try to go here" not "definitely go here next"
---  rotated sprites: purplepaths.p8
---  90 degree rotations: crossed-wires.p8 (draw_s/sprdir)
---  ecs: ld47/ecs.p8
---    different flavor start point: crossed-wires.p8
-
 --[[
 this engine uses an actor-based
  system designed to be as simple
  as possible, not efficient.
 replace when needed
 
-todo: upd_game event order?
- script/update are currently
-  iterleaved, all at once might be better
+todo:
  quitting out from upd_gover is hella borked for some reason
   it stalls during drw_game on the first frame...
   maybe b/c it doesn't get a chance to run upd_game that frame??
@@ -50,6 +16,7 @@ todo: upd_game event order?
 dev=true
 dev_pal_pick=dev --tab to swap colors
 dev_pal_persist=dev
+dev_grid=dev
 --dev_rng={0x5438.c744,0xfe04.4447}
 
 function dev_init()
@@ -97,7 +64,7 @@ function _update60()
 end
 
 function _draw()
- cls(3)
+ cls(9)
  drw()
  check_fade()
 end
@@ -105,7 +72,7 @@ end
 function init_game()
  upd,drw=upd_game,drw_game
  actors,actors_toinit={},{}
- worldw,worldh=32,32
+ worldw,worldh=16,16
  do_z_sort=false
  load_actors()
  -- fade_t=1 --doesn't work with custom palettes
@@ -186,7 +153,9 @@ end
 
 function hit(x,y, ignore)
  for ob in all(actors) do
-  if ob~=ignore and ob.x==x and ob.y==y then
+  if ob~=ignore and not ob.nohit
+  and ob.x==x and ob.y==y
+  then
    return ob
   end
  end
