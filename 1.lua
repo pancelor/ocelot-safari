@@ -25,20 +25,18 @@ buts={}
 buts_del={}
 btn_last=0x0
 function update_btns()
- local newbuts=btnp()&~btn_last
  for b=0,3 do
   local mask=1<<b
-  if newbuts&mask>0 then
+  if btnp()&mask>0 then
    -- pq("press",b)
    add(buts,{b=b})
   end
  end
 
- local btn_now=btn()
- btn_up=(btn_now&btn_last)^^btn_last
+ local btnr=(btn()&btn_last)^^btn_last
  for b=0,3 do
   local mask=1<<b
-  if btn_up&mask>0 then
+  if btnr&mask>0 then
    local ix=_recent_ix(b)
    assert(ix,ix)
    if buts[ix].seen then
@@ -50,7 +48,7 @@ function update_btns()
    end
   end
  end
- btn_last=btn_now
+ btn_last=btn()
 end
 function _recent_ix(b)
  for i=#buts,1,-1 do
