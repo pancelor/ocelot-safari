@@ -202,6 +202,14 @@ function unpal(p)
  end
 end
 
+function nocam(f)
+ return function(...)
+  local cx,cy=camera()
+  f(...)
+  camera(cx,cy)
+ end
+end
+
 --
 -- pico-8 stuff
 --
@@ -265,7 +273,7 @@ function update_screenshot_title()
  if time()-_last_ust_time>=1 then
   _last_ust_time=time()
   extcmd("set_filename",qf("%_%_%_%t%_%_%",
-   "drawcelot",
+   "deep",
    stat(90),stat(91),stat(92),
    stat(93),stat(94),stat(95)
   ))
@@ -575,26 +583,6 @@ function update_ani(ani)
   ani.f=1+ani.f%#ani
   ani.s=ani[ani.f]
  end
-end
-
--- x,y: 8-scaled world pos
--- vox,voy: 1-scaled visual offset
--- px,py: 1-scaled sprite pivot
-function draw_s(self,s)
- local ani=self.ani or self
- palt(ani.palt)
- local s,w,h,flp=s or ani.s,ani.w or 1,ani.h or 1,ani.flp
- local hsw,hsh=4*w,4*h
- local px,py=ani.px or hsw,ani.py or hsh
- if flp then
-  px=8*w-px
- end
- local x,y=
-  self.x*8+(self.vox or 0)-(px-hsw),
-  self.y*8+(self.voy or 0)-(py-hsh)
- spr(s,x,y,w,h,flp)
--- rectwh(x,y,w*8,h*8,8)
- palt()
 end
 
 function build_palt(...)

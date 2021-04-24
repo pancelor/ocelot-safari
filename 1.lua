@@ -21,39 +21,70 @@ need to get more experience
  before baking it into a template
 ]]
 
-function load_actors()
- pl=make_actor{
-  x=8,
-  y=8,
-  z=-10,
---  ani={
---   3,5,
---   w=2,h=2,px=6,py=13,
---   palt=build_palt(12),
---  },
-  ani={1,2},
-  update=function(self)
-   if do_voxy(self) then
-    local dx,dy=0,0
-    if btnp(0) then dx-=1 self.ani.flp=true end
-    if btnp(1) then dx+=1 self.ani.flp=false end
-    if btnp(2) then dy-=1 end
-    if btnp(3) then dy+=1 end
-    
-    if btnp(5) then
-     fadeout()
-     init_gover()
-    end
-    local nx,ny=self.x+dx,self.y+dy
-    self.x,self.y=nx,ny
-    self.vox,self.voy=-8*dx,-8*dy
+buts={}
+buts_del={}
+btn_last=0x0
+function update_btns()
+ local newbuts=btnp()&~btn_last
+ for b=0,3 do
+  local mask=1<<b
+  if newbuts&mask>0 then
+   pq("press",b)
+   add(buts,{b=b})
+  end
+ end
+
+ local btn_now=btn()
+ btn_up=(btn_now&btn_last)^^btn_last
+ for b=0,3 do
+  local mask=1<<b
+  if btn_up&mask>0 then
+   local ix=_recent_ix(b)
+   assert(ix,ix)
+   if buts[ix].seen then
+    -- pq("seen; release now",b)
+    deli(buts,ix)
+   else
+    -- pq("not seen yet; release later",b)
+    add(buts_del,buts[ix])
    end
-  end,
-  draw=function(self)
-   draw_s(self)
-   rectfillwh(self.x*8,self.y*8,1,1,8)
-  end,
- }
+  end
+ end
+ btn_last=btn_now
+end
+function _recent_ix(b)
+ for i=#buts,1,-1 do
+  if buts[i].b==b then
+   return i
+  end
+ end
+end
+function poll_btns()
+ -- pq(qa(buts))
+ if #buts>0 then
+  --find first unseen entry
+  local entry=buts[#buts]
+  for e in all(buts) do
+   if not e.seen then
+    entry=e
+    break
+   end
+  end
+  entry.seen=true
+  -- delayed button release
+  for e in all(buts_del) do
+   -- pq("delayed release",e.b)
+   del(buts,e)
+  end
+  buts_del={}
+  -- pq(entry.b,"===")
+  return rot_from_but[entry.b]
+ end
+end
+
+function load_actors()
+ actor_machete{x=4,y=4}
+ pl=actor_player{x=5,y=6}
  mouse=make_actor{
   x=0,
   y=0,
@@ -64,15 +95,16 @@ function load_actors()
    local mx,my,wheel=poll_mouse()
    self.x,self.y=mx,my
   end,
-  draw=function(self)
-   spr(self.s,self.x-1,self.y-1)
-  end,
+  draw=nocam(function(self)
+   sspr(120,24,8,8,self.x-1,self.y-1)
+  end),
  }
  hud=make_actor{
   z=-100,
   update=function(self)
   end,
   draw=nocam(function(self)
+   grid(8)
    if dev then
     print("dev",0,0,7)
    end
@@ -94,9 +126,124 @@ function load_actors()
  }
 end
 
+function actor_player(...)
+ return make_actor({
+  z=-20,
+  ani={
+   1,
+   palt=0,
+  },
+  -- item=nil,
+  facerot=0,
+  init=function(self)
+   self.prevx,self.prevy=self.x,self.y
+  end,
+  update=function(self)
+   update_btns()
+
+   if do_voxy(self) then
+    -- handle items
+    if btn(4) and not self.item then
+     for dr in all{0,2,1,3} do
+      local rot=(self.facerot+dr)%4
+      local item=hit(self.x+rotx[rot],self.y+roty[rot])
+      if item then
+       pq("item:",item~=nil)
+       self.item=item
+       break
+      end
+     end
+    end
+    if not btn(4) and self.item then
+     pq("drop")
+     self.item=nil
+    end
+
+    -- move
+    local rot=poll_btns()
+    if rot then
+     self:move(rot)
+    end
+   end
+  end,
+  move_towards=move_towards,
+  move=function(self,rot)
+   -- flp
+   if rot==0 then
+    self.ani.flp=true
+   elseif rot==1 then
+    self.ani.flp=false
+   end
+
+   local dx,dy=rotx[rot],roty[rot]
+   local nx,ny=self.x+dx,self.y+dy
+   self.facerot=rot
+
+   local ob=hit(nx,ny)
+   if ob then
+    self.vox,self.voy=_12/2*dx,_12/2*dy
+   else
+    self.prevx,self.prevy,self.x,self.y=self.x,self.y,nx,ny
+    self.vox,self.voy=-_11*dx,-_11*dy
+    if self.item then
+     self.item:move_towards(self.prevx,self.prevy)
+    end
+   end
+  end,
+  draw=function(self)
+   draw_s(self)
+   rectfillwh(self.x*_12,self.y*_12,1,1,8)
+  end,
+ },...)
+end
+
+function actor_machete(...)
+ return make_actor({
+  z=-10,
+  ani={
+   2,
+   palt=0,
+  },
+  init=function(self)
+   --stub
+  end,
+  move_towards=move_towards,
+  move=move,
+  update=function(self)
+   if do_voxy(self) then
+    --stub
+   end
+  end,
+  script=cocreate(function(self)
+   while 1 do
+    --stub
+    yield()
+   end
+  end),
+  draw=function(self)
+   --stub
+   draw_s(self)
+  end,
+ },...)
+end
+
+function move_towards(self,x,y)
+ local dx,dy=x-self.x,y-self.y
+ if abs(dy)<abs(dx) then
+  self:move(dx<0 and 2 or 0)
+ else
+  self:move(dy<0 and 1 or 3)
+ end
+end
+function move(self,rot)
+ local dx,dy=rotx[rot],roty[rot]
+ self.x,self.y=self.x+dx,self.y+dy
+ self.vox,self.voy=-_11*dx,-_11*dy
+end
+
 -- given a screenpos, return a worldpos
 function ppi(x,y)
- return (x+%0x5f28)\8,(y+%0x5f2a)\8
+ return (x+%0x5f28)\_12,(y+%0x5f2a)\_12
 end
 
 -- moves self.vox->0 and self.voy->0
@@ -114,24 +261,18 @@ function do_voxy(self,spd)
  return done
 end
 
-function nocam(f)
- return function(...)
-  local cx,cy=camera()
-  f(...)
-  camera(cx,cy)
- end
-end
-
 ---
 
 function actor_(...)
  return make_actor({
-  z=0,
+  z=-10,
+  ani={
+   0,
+   palt=0,
+  },
   init=function(self)
    --stub
   end,
-  hitl=hitl_misc,
-  hitf=hitf_samepos,
   update=function(self)
    if do_voxy(self) then
     --stub

@@ -12,14 +12,13 @@ every palette change is auto-copied to your
 function check_palpick()
  local activate=dev_pal_pick and upd~=upd_pal and btnp(4,1)
  if not activate then return end
- pq("activate")
 
  local old_upd,old_drw=upd,drw
  upd,drw=upd_pal,drw_pal
 
  palpick={
-  mx=0,
-  my=0,
+  -- mx=0,
+  -- my=0,
   firstframe=true,
   pal={},
   hoveri=nil,
@@ -65,12 +64,12 @@ function check_palpick()
    memset(0x5f7f,0xff,1)
   end,
   clipcode=function(self)
-   local s="--screen palette\npoke(unpack(split\"0x5f10"
+   local s="poke(unpack(split\"0x5f10"
    for i=0,15 do
     local c=self.pal[i]
     s..=(c>=0x80 and ",0x8" or ",0x")..hex[c&0xf]
    end
-   s..="\"))"
+   s..="\"))\n"
    printh(s,"@clip")
    return s
   end,
@@ -164,6 +163,8 @@ function check_palpick()
   end,
   draw=function(self)
    old_drw()
+   local cx,cy=camera() --todo fix color picker
+
    -- colors
    rectfillwh(0,111,128,1,0)
    for i=0,31 do
@@ -195,6 +196,7 @@ function check_palpick()
    if self.my<111 then
     rectfillborder(self.mx+3,self.my+3,8,8, 1,0,self.hoveri)
    end
+   camera(cx,cy)
   end,
  }
 
