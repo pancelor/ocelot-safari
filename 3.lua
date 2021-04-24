@@ -95,6 +95,10 @@ function check_palpick()
    return 1,104,23,7,...
   end,
   -- hoverreset=false,
+  swap_hb=function(self,...)
+   return 25,104,19,7,...
+  end,
+  -- hoverswap=false,
   update=function(self)
    self.mx,self.my=poll_mouse()
 
@@ -125,7 +129,7 @@ function check_palpick()
     end
    end
 
-   -- reset
+   -- buttons
    self.hoverreset=rect_collide(self.mx,self.my,1,1,self:reset_hb())
    if self.hoverreset and mbtnr(lmb) then
     for i=0,15 do
@@ -133,6 +137,14 @@ function check_palpick()
     end
     for i=16,31 do
      self.pal[i]=0x80|(i&0xf)
+    end
+    self:set_pals()
+    choicei=nil
+   end
+   self.hoverswap=rect_collide(self.mx,self.my,1,1,self:swap_hb())
+   if self.hoverswap and mbtnr(lmb) then
+    for i=0,15 do
+     self.pal[i],self.pal[i+16]=self.pal[i+16],self.pal[i]
     end
     self:set_pals()
     choicei=nil
@@ -166,7 +178,12 @@ function check_palpick()
 
    -- reset
    rectfillwh(self:reset_hb( self.hoverreset and 8 or 0))
-   print("\015reset",3,105,7)
+   local x,y=self:reset_hb()
+   print("\015reset",x+2,y+1,7)
+   -- swap
+   rectfillwh(self:swap_hb( self.hoverswap and 8 or 0))
+   local x,y=self:swap_hb()
+   print("\015swap",x+2,y+1,7)
 
    -- crosshair
    for d=2,3 do
