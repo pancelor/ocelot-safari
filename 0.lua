@@ -18,7 +18,7 @@ todo:
 -- fixedrng ?
 -- use srnd instead of rng_state stuff
 
-dev=true
+-- dev=true
 -- dev_dev_marker=dev
 dev_pal_pick=dev --tab to swap colors
 dev_pal_persist=dev

@@ -314,6 +314,7 @@ function actor_player(...)
      if self:fire_dist2()>5 then
       cam:shake()
       self.hp-=1
+      sfx(61)
       if self.hp<0 then
        fadeout()
        init_gover()
@@ -359,8 +360,10 @@ end
 function apply_event(self,name,name2,rot,x,y)
  local tile=hit_tile(x,y)
  if tile and self.bump_tile then
-  self:bump_tile(tile,x,y)
- else
+  self:bump_tile(tile,x,y) 
+ end
+ -- no tile change
+ if tile==hit_tile(x,y) then
   local ob=hit(x,y)
   if ob and ob[name] then
    ob[name](ob,rot)
@@ -625,7 +628,8 @@ function actor_cat(...)
     end
    end
 
-   self.spook=dist2(self.x-pl.x,self.y-pl.y)<=5
+   local SPOOK_D2=2
+   self.spook=dist2(self.x-pl.x,self.y-pl.y)<=SPOOK_D2
   end,
   spookwait=function(self,t)
    for i=1,t do

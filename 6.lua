@@ -1,6 +1,12 @@
 -- notes
 --[[
 
+sfx
+63 
+62 
+61 hurt
+60 
+
 tasks:
 
 x make sprites: rocks, pick, stone
@@ -13,6 +19,11 @@ x starting area (worldgen)
 x ocelots!
 
 * playtest day/night cycle
+ * notes
+  too easy to just move your base...?
+  too easy to find tools that get stolen - just go back to start
+  will take too long to win I think... gets boring maybe
+
 * cat beat movement
 * gover
 * fade fix
