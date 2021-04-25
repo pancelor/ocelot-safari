@@ -87,17 +87,63 @@ function buts_waiting()
  end
 end
 
+T_AXE=0x22
+T_PICK=0x26
+T_MACHETE=0x03
+T_PLAYER=0x02
+T_PATH=0x00
+T_WATER=0x28
+T_ROCK=0x23
+T_TREE=0x08
+T_VINE=0x05
+function translate_tile(t)
+ if t==T_AXE then
+  return actor_axe
+ elseif t==T_PICK then
+  return actor_pick
+ elseif t==T_MACHETE then
+  return actor_machete
+ elseif t==T_PLAYER then
+  return actor_player
+ elseif t==T_ROCK then
+  return actor_rock
+ elseif t==T_TREE then
+  return actor_tree
+ elseif t==T_WATER then
+  return actor_water
+ elseif t==T_VINE then
+  return actor_vine
+ end
+end
+
+function hit_tile(x,y)
+ local t=mget(x,y)
+ return fget(t,0) and t
+end
+
+function draw_tile(t,x,y)
+ if t==0 then return end
+ local y8,x8=divmod(t,16)
+ local sx,sy=x8*8\_12,y8*8\_12
+ -- todo camera culling?
+ sspr(sx*_12,sy*_12,_11,_11,x*_12,y*_12,_11,_11)
+end
+
+function load_map()
+ for y=0,worldh-1 do
+  for x=0,worldw-1 do
+   local tile=mget(x,y)
+   if tile~=0 then
+    local ctor=translate_tile(tile)
+    assert(ctor,q(x,y,tile,tostr(tile,1)))
+    ctor{x=x,y=y}
+   end
+  end
+ end
+end
+
 function load_actors()
- actor_machete{x=4,y=4}
- pl=actor_player{x=5,y=6}
- actor_vine{x=6,y=7}
- actor_vine{x=6,y=8}
- actor_vine{x=6,y=9}
- actor_vine{x=6,y=10}
- actor_axehead{x=2,y=3}
- actor_tree{x=2,y=5}
- actor_tree{x=2,y=6}
- actor_wood{x=2,y=8}
+ load_map()
  mouse=make_actor{
   x=0,
   y=0,
@@ -133,14 +179,18 @@ function load_actors()
    )
   end,
   draw=function(self)
-   -- map()
+   -- for y=0,worldh do
+   --  for x=0,worldw do
+   --   draw_tile(mget(x,y),x,y)
+   --  end
+   -- end
    grid(10)
   end,
  }
 end
 
 function actor_player(...)
- return make_actor({
+ pl=make_actor({
   z=-20,
   ani={
    1,
@@ -206,6 +256,7 @@ function actor_player(...)
    end
   end,
  },...)
+ return pl
 end
 
 function apply_event(name,name2,rot,x,y)
@@ -277,65 +328,9 @@ function actor_vine(...)
   z=-10,
   ani={
    3,
-   palt=0,
+   palt=build_palt(0),
   },
-  on_machete=function(self)
-   actor_fiber{x=self.x,y=self.y}
-   die(self)
-  end,
- },...)
-end
-
-function actor_fiber(...)
- return make_actor({
-  z=-10,
-  hp=2,
-  ani={
-   5,
-   palt=0,
-  },
-  update=do_voxy,
-  move=move,
-  on_machete=function(self)
-   self.hp-=1
-   if self.hp>0 then
-    self.ani.pal=parse"15=5,14=9,13=10"
-   else
-    die(self)
-   end
-  end,
- },...)
-end
-
-function try_combine(ob1,ob2)
- function match(p1,p2)
-  return ob1[p1] and ob2[p2]
-      or ob1[p2] and ob2[p1]
- end
- if match("is_axehead","is_handle") then
-  die(ob1)
-  die(ob2)
-  return actor_axe{x=ob1.x,y=ob1.y}
- end
-end
-
-function actor_axehead(...)
- return make_actor({
-  z=-10,
-  is_axehead=true,
-  ani={
-   6,
-   palt=0,
-  },
-  update=do_voxy,
-  move=move,
-  bump=function(self,ob,rot)
-   if try_combine(self,ob) then
-    --
-   elseif ob.move then
-    ob:move(rot)
-   end
-  end,
+  on_machete=die,
  },...)
 end
 
@@ -367,12 +362,38 @@ function actor_axe(...)
  },...)
 end
 
+function actor_pick(...)
+ return make_actor({
+  z=-10,
+  ani={
+   16,
+   palt=0,
+  },
+  update=do_voxy,
+  move=move,
+  swing=function(self,myrot,plrot)
+   self:move(myrot)
+   local plrot2=(plrot+2)%4
+   apply_event("on_pick","move",myrot,xy_from_rot(myrot,self.x,self.y))
+  end,
+  bump=function(self,ob,rot)
+   if ob.on_pick then
+    ob:on_pick(rot)
+    local x,y=xy_from_rot(rot,self.x,self.y)
+    actor_x{x=x,y=y}
+   elseif ob.move then
+    ob:move(rot)
+   end
+  end,
+ },...)
+end
+
 function actor_tree(...)
  return make_actor({
   z=-10,
   ani={
-   7,
-   palt=0,
+   5,
+   palt=build_palt(0),
   },
   on_axe=function(self)
    actor_wood{x=self.x,y=self.y}
@@ -384,7 +405,6 @@ end
 function actor_wood(...)
  return make_actor({
   z=-10,
-  is_handle=true,
   ani={
    12,
    palt=0,
@@ -392,12 +412,63 @@ function actor_wood(...)
   move=move,
   update=do_voxy,
   bump=function(self,ob,rot)
-   if try_combine(self,ob) then
-    --
+   if ob.on_wood then
+    ob:on_wood(self,rot)
    elseif ob.move then
     ob:move(rot)
    end
-  end
+  end,
+ },...)
+end
+
+function actor_rock(...)
+ return make_actor({
+  z=-10,
+  ani={
+   14,
+   palt=build_palt(0),
+  },
+  on_pick=function(self)
+   actor_stone{x=self.x,y=self.y}
+   die(self)
+  end,
+ },...)
+end
+
+function actor_stone(...)
+ return make_actor({
+  z=-10,
+  ani={
+   15,
+   palt=0,
+  },
+  move=move,
+  update=do_voxy,
+  bump=function(self,ob,rot)
+   if ob.on_stone then
+    ob:on_stone(self,rot)
+   elseif ob.move then
+    ob:move(rot)
+   end
+  end,
+ },...)
+end
+
+function actor_water(...)
+ return make_actor({
+  z=-10,
+  ani={
+   17,18,
+   palt=0,
+  },
+  on_wood=function(self,ob,rot)
+   die(self)
+   die(ob)
+  end,
+  on_stone=function(self,ob,rot)
+   die(self)
+   die(ob)
+  end,
  },...)
 end
 
@@ -462,7 +533,9 @@ function move(self,rot)
   end
  end
 
- if hit(nx,ny) or not inbounds(nx,ny) then
+ if hit(nx,ny)
+ or not inbounds(nx,ny)
+ then
   self.vox,self.voy=_12/2*dx,_12/2*dy
  else
   self.prevx,self.prevy,self.x,self.y=self.x,self.y,nx,ny

@@ -64,7 +64,7 @@ function _update60()
 end
 
 function _draw()
- cls(9)
+ cls(4)
  drw()
  check_fade()
 end
@@ -72,7 +72,7 @@ end
 function init_game()
  upd,drw=upd_game,drw_game
  actors,actors_toinit={},{}
- worldw,worldh=16,16
+ worldw,worldh=64,20
  do_z_sort=false
  load_actors()
  -- fade_t=1 --doesn't work with custom palettes
