@@ -8,7 +8,7 @@ x make sprites: rocks, pick, stone
 x map drawing (no gen); no black border...?
 x fix machete
 x worldgen
-* paths (worldgen)
+x paths (worldgen)
 * starting area (worldgen)
 * ocelots
 * day/night cycle

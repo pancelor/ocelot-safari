@@ -19,7 +19,7 @@ dev=true
 dev_pal_pick=dev --tab to swap colors
 dev_pal_persist=dev
 dev_grid=dev
-dev_ghost=dev
+-- dev_ghost=dev
 --dev_rng={0x5438.c744,0xfe04.4447}
 
 function dev_init()

@@ -18,21 +18,36 @@ end
 function map_gen()
  gen_rnd()
  gen_adjust()
- local y=worldh\2
- mset(2,y,T_PLAYER)
- mset(1,y-2,T_AXE)
- mset(1,y-3,T_PICK)
- mset(2,y-2,T_MACHETE)
- mset(2,y-3,T_FLINT)
+ gen_player_area()
+end
+
+function gen_player_area()
+ local r=2
+ for y=0,worldh-1 do
+  r=mid(4,r+rnd(split"0,1,-1"))
+  for x=0,r-1 do
+   mset(x,y,T_PATH)
+  end
+ end
+ local x0,y0=1,rndr(5,worldh-5)
+ stamp(T_PATH,x0,y0-1,-1)
+ stamp(T_PATH,x0,y0+1,-1)
+ mset(x0,y0,T_PLAYER)
+ mset(x0-1,y0-2,T_AXE)
+ mset(x0,  y0-2,T_PICK)
+ -- mset(x0+1,y0-2,)
+ mset(x0-1,y0+2,T_FLINT)
+ mset(x0,  y0+2,T_MACHETE)
+ -- mset(x0+1,y0+2,T_PLAYER)
 end
 
 function gen_rnd()
  memset(0x2000,0,0x1000)
  for y=0,worldh-1 do
-  for x=4,worldw-1 do
+  for x=0,worldw-1 do
    local r=rnd()
-   local t=r<0.5 and T_TREE
-    or r<0.9 and T_VINE
+   local t=r<0.5 and T_VINE
+    or r<0.9 and T_TREE
     or T_ROCK
    mset(x,y,t)
   end
@@ -62,18 +77,31 @@ function drifter(p0,pmin,pmax)
     self.pmin,self.pmax,
     self.p+rndr(-dp,dp)
    )
-   pq(res)
+   -- pq(res)
    return res
   end
  }
 end
  
 function gen_adjust()
- local C_ROCK,C_WATER=0.3,0.8
+ local C_ROCK,C_WATER,C_PATH=0.3,0.8,0.5
 
- -- rocks
+ --rocks
  for cell in all(mapfindall(T_ROCK)) do
   stamp(T_ROCK,cell.x,cell.y,0b110110110,C_ROCK)
+ end
+
+ --paths
+ for i=1,50 do
+  local x,y=rnd(worldw),rnd(worldh)
+  local rot=0
+  for i=1,rnd(6)+rnd(6)+rnd(6) do
+   mset(x,y,T_PATH)
+   x+=rotx[rot]+rnd(split"0,0,0,0,0,0,-1,1")
+   y+=roty[rot]+rnd(split"0,0,0,0,0,0,-1,1")
+   rot+=rnd(split"0,0,0,0,1,-1")
+   rot%=4
+  end
  end
 
  --rivers
@@ -95,39 +123,38 @@ function gen_adjust()
    r=mid(1,r,4)
   end
  end
-
 end
-function foo()
+-- function foo()
 
 
- local N_SPREAD,C_SPREAD=75,0.9
- for i=1,N_SPREAD do
-  local x0,y0=rndr(4,worldw)\1,rndr(worldh)\1
-  local t0=mget(x0,y0)
-  local i0,i1,d1=0,7,1
-  -- if t0==T_WATER then
-  --  d=2
-  -- elseif t0==T_TREE then
-  --  i0=4
-  -- elseif t0==T_PATH then
-  --  i1=3 -- straight only
-  --  d=2
-  -- elseif t0==T_ROCK then
-  --  -- good to go
-  -- elseif t0==T_VINE then
-  --  -- good to go
-  -- end
+--  local N_SPREAD,C_SPREAD=75,0.9
+--  for i=1,N_SPREAD do
+--   local x0,y0=rndr(4,worldw)\1,rndr(worldh)\1
+--   local t0=mget(x0,y0)
+--   local i0,i1,d1=0,7,1
+--   -- if t0==T_WATER then
+--   --  d=2
+--   -- elseif t0==T_TREE then
+--   --  i0=4
+--   -- elseif t0==T_PATH then
+--   --  i1=3 -- straight only
+--   --  d=2
+--   -- elseif t0==T_ROCK then
+--   --  -- good to go
+--   -- elseif t0==T_VINE then
+--   --  -- good to go
+--   -- end
   
-  for i=i0,i1 do
-   for d=1,d1 do
-    local x,y=x0+d*dirx[i],y0+d*diry[i]
-    if rnd()<C_SPREAD then
-     mset(x,y,t0)
-    end
-   end
-  end
- end
-end
+--   for i=i0,i1 do
+--    for d=1,d1 do
+--     local x,y=x0+d*dirx[i],y0+d*diry[i]
+--     if rnd()<C_SPREAD then
+--      mset(x,y,t0)
+--     end
+--    end
+--   end
+--  end
+-- end
 
 function mapfindall(t)
  local res={}

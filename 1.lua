@@ -294,13 +294,13 @@ function apply_event(self,name,name2,rot,x,y)
  local tile=hit_tile(x,y)
  if tile and self.bump_tile then
   self:bump_tile(tile,x,y)
- end
-
- local ob=hit(x,y)
- if ob and ob[name] then
-  ob[name](ob,rot)
- elseif ob and ob[name2] then
-  ob[name2](ob,rot)
+ else
+  local ob=hit(x,y)
+  if ob and ob[name] then
+   ob[name](ob,rot)
+  elseif ob and ob[name2] then
+   ob[name2](ob,rot)
+  end
  end
  actor_x{x=x,y=y}
 end
@@ -374,6 +374,13 @@ function actor_axe(...)
    apply_event(self,"on_axe","move",plrot2,xy_from_rot(plrot2,self.x,self.y))
    apply_event(self,"on_axe","move",myrot,xy_from_rot(myrot,xy_from_rot(plrot2,self.x,self.y)))
   end,
+  bump=function(self,ob,rot)
+   if ob.on_axe then
+    ob:on_axe(rot)
+   elseif ob.move then
+    ob:move(rot)
+   end
+  end,
   bump_tile=function(self,tile,x,y)
    if tile==T_TREE then
     mset(x,y,T_PATH)
@@ -397,6 +404,13 @@ function actor_pick(...)
    self:move(myrot)
    local plrot2=(plrot+2)%4
    apply_event(self,"on_pick","move",myrot,xy_from_rot(myrot,self.x,self.y))
+  end,
+  bump=function(self,ob,rot)
+   if ob.on_pick then
+    ob:on_pick(rot)
+   elseif ob.move then
+    ob:move(rot)
+   end
   end,
   bump_tile=function(self,tile,x,y)
    if tile==T_ROCK then
@@ -455,6 +469,7 @@ function actor_wood(...)
   palt=0,
   move=move,
   update=do_voxy,
+  on_axe=die,
   bump_tile=function(self,tile,x,y)
    if tile==T_WATER then
     mset(x,y,T_PATH)
@@ -486,6 +501,7 @@ function actor_stone(...)
   palt=0,
   move=move,
   update=do_voxy,
+  on_pick=die,
   bump_tile=function(self,tile,x,y)
    if tile==T_WATER then
     mset(x,y,T_PATH)
