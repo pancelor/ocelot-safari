@@ -76,6 +76,7 @@ T_PLAYER=1
 T_MACHETE=2
 T_VINE=3
 T_TREE=5
+T_LIGHT=8
 T_AXE=13
 T_ROCK=14
 T_STONE=15
@@ -142,7 +143,7 @@ function load_map()
  end
 end
 
-local DAY_LEN,DAY_AND_DUSK_LEN,TOTAL_LEN=100,120,160
+local DAY_LEN,DAY_AND_DUSK_LEN,TOTAL_LEN=100,130,160
 local CLOCK_LEN=60
 function load_actors()
  if dev_fast_cycle then
@@ -159,10 +160,10 @@ function load_actors()
   dayt=0,
   nohit=true,
   script=cocreate(function(self)
+   poke(unpack(split(daypoke)))
    while 1 do
     wait(CLOCK_LEN)
     emit"clock_tick"
-    pq"clock_tick"
    end
   end),
   clock_tick=function(self)
@@ -307,30 +308,35 @@ function actor_player(...)
      else
       self:move(rot)
      end
+     self:post_move()
     end
    end
   end,
-  nt_timer=4,
+  nt_timer=0,
   hp=4,
-  clock_tick=function(self)
+  post_move=function(self)
    --night terrors
    self.nt_timer-=1
    if self.nt_timer<=0 then
     if hud:is_night() then
-     self.nt_timer=4
-     if self:fire_dist2()>5 then
-      cam:shake()
-      self.hp-=1
-      sfx(61)
-      if self.hp<0 then
-       fadeout()
-       init_gover()
-      end
-     end
+     self.nt_timer=2
+     self:clock_tick()
     else
      -- recover during day
-     self.nt_timer=16
+     self.nt_timer=32
      self.hp=min(self.hp+1,4)
+    end
+   end
+  end,
+  --fire_damage
+  clock_tick=function(self)
+   if hud:is_night() and self:fire_dist2()>2 then
+    cam:shake()
+    self.hp-=1
+    sfx(61)
+    if self.hp<0 then
+     fadeout()
+     init_gover()
     end
    end
   end,
@@ -398,6 +404,10 @@ function actor_machete(...)
   s=2,
   init=tool_init,
   move=move,
+  -- move=function(self,rot,...)
+  --  move(self,rot,...)
+  --  actor_x{x=self.x,y=self.y}
+  -- end,
   swing=function(self,myrot,plrot,ignore_tiles)
    self:move(myrot,ignore_tiles)
    local plrot2=(plrot+2)%4
@@ -500,22 +510,22 @@ function actor_flint(...)
  },...)
 end
 
-function actor_mag(...)
- return make_actor({
-  z=-10,
-  s=24,
-  init=tool_init,
-  update=do_voxy,
-  move=move,
-  bump=function(self,ob,rot)
-   if ob.on_mag then
-    ob:on_mag(self,rot)
-   elseif ob.move then
-    ob:move(rot)
-   end
-  end,
- },...)
-end
+-- function actor_mag(...)
+--  return make_actor({
+--   z=-10,
+--   s=24,
+--   init=tool_init,
+--   update=do_voxy,
+--   move=move,
+--   bump=function(self,ob,rot)
+--    if ob.on_mag then
+--     ob:on_mag(self,rot)
+--    elseif ob.move then
+--     ob:move(rot)
+--    end
+--   end,
+--  },...)
+-- end
 
 function actor_wood(...)
  return make_actor({
@@ -544,11 +554,26 @@ function actor_fire(...)
   ttl=TOTAL_LEN-DAY_LEN,
   ani={
    20,21,
+   palt=build_palt(0),
   },
   clock_tick=function(self)
    self.ttl-=1
    if self.ttl<=0 then
     die(self)
+   end
+  end,
+  init=function(self)
+   self:surround(T_LIGHT)
+  end,
+  denit=function(self)
+   self:surround(T_PATH)
+  end,
+  surround=function(self,T)
+   for i=0,7 do
+    local x,y=self.x+dirx[i],self.y+diry[i]
+    if mget(x,y)==T_PATH+T_LIGHT-T then
+     mset(x,y,T)
+    end
    end
   end,
  },...)
@@ -559,9 +584,13 @@ function actor_gem(...)
   z=-10,
   s=25,
   move=move,
-  update=do_voxy,
-  on_mag=function(self,rot)
-   pq"winner"
+  update=function(self)
+   if do_voxy(self) then
+    if self.x<=1 then
+     fadeout()
+     init_gover(true)
+    end
+   end
   end,
  },...)
 end
@@ -676,14 +705,14 @@ function actor_cat(...)
      while not do_voxy(self) do 
       yield()
      end
-     if self:spookwait(60) then
+     if self:spookwait(30) then
       break
      end
      if rnd()<0.1 and not dev_spawn_cat then
       -- pq"rest"
       local speed=self.ani.speed
       self.ani.s,self.ani.speed=38,1000
-      wait(rnd(100)+300)
+      self:spookwait(rnd(100)+150)
       self.ani.speed=speed
      end
      local rot,arrived=get_rot_from_diff(tool.x-self.x,tool.y-self.y)
@@ -702,7 +731,7 @@ function actor_cat(...)
      while not do_voxy(self) do 
       yield()
      end
-     wait(20)
+     wait(10)
      local rot=get_rot_from_diff(self.x-pl.x,self.y-pl.y)
      self:seek(rot)
      -- if not inbounds(self.x,self.y) then
@@ -778,7 +807,7 @@ function move(self,rot, ignore_tiles)
  local tile=hit_tile(nx,ny)
  if tile
  and ignore_tiles
- and tile~=T_WATER
+ and (tile==T_VINE or tile==T_TREE)
  then
   tile=nil
  end

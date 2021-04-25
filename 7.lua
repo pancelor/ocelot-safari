@@ -5,7 +5,9 @@ function map_gen()
  gen_adjust()
  gen_player_area()
  if dev_spawn_gem then
-  mset(10,10,T_GEM)
+  mset(5,10,T_GEM)
+ else
+  mset(worldw-5,rndr(worldh/4,worldh*3/4)\1,T_GEM)
  end
 end
 
@@ -21,12 +23,12 @@ function gen_player_area()
  stamp(T_PATH,x0,y0-1,-1)
  stamp(T_PATH,x0,y0+1,-1)
  mset(x0,y0,T_PLAYER)
- mset(x0-1,y0-2,T_MAG)
- mset(x0,  y0-2,T_PICK)
+ mset(x0-1,y0-3,T_PICK)
+ -- mset(x0,  y0-2,T_MAG)
  mset(x0+1,y0-2,T_AXE)
- mset(x0-1,y0+2,T_FLINT)
- mset(x0,  y0+2,T_MACHETE)
- -- mset(x0+1,y0+2,T_PLAYER)
+ mset(x0-1,y0+3,T_FLINT)
+ -- mset(x0,  y0+2,T_)
+ mset(x0+1,y0+2,T_MACHETE)
 end
 
 function gen_rnd()
@@ -34,7 +36,7 @@ function gen_rnd()
  for y=0,worldh-1 do
   for x=0,worldw-1 do
    local r=rnd()
-   local t=r<0.5 and T_VINE
+   local t=r<0.4 and T_VINE
     or r<0.9 and T_TREE
     or T_ROCK
    mset(x,y,t)
@@ -46,8 +48,9 @@ function stamp(tile,x,y,bits, chance)
  -- 0b000
  --   000
  --   000
+ chance=chance or 1
  for i=0,8 do
-  if bits&(1<<(8-i))>0 and (not chance or rnd()<chance) then
+  if bits&(1<<(8-i))>0 and rnd()<chance then
    mset(x+i%3-1,y+i\3-1,tile)
   end
  end
@@ -72,7 +75,7 @@ function drifter(p0,pmin,pmax)
 end
  
 function gen_adjust()
- local C_ROCK,C_WATER,C_PATH=0.3,0.8,0.5
+ local C_ROCK,C_WATER,C_PATH,C_VINE1,C_VINE2=0.3,0.8,0.5,0.35,0.4
 
  --rocks
  for cell in all(mapfindall(T_ROCK)) do
@@ -109,6 +112,13 @@ function gen_adjust()
    end
    r+=rndr(-1,2)\1
    r=mid(1,r,4)
+  end
+ end
+
+ --vines
+ for cell in all(mapfindall(T_VINE)) do
+  if rnd()<C_VINE1 then
+   stamp(T_VINE,cell.x,cell.y,-1,C_VINE2)
   end
  end
 end

@@ -20,14 +20,14 @@ todo:
 -- s/dot()/pset(), lol
 
 dev=true
--- dev_dev_marker=dev
 dev_pal_pick=dev --tab to swap colors
 dev_pal_persist=dev
--- dev_grid=dev
 -- dev_fast_cycle=dev
-dev_spawn_cat=dev
+-- dev_spawn_cat=dev
 -- dev_spawn_gem=dev
 -- dev_ghost=dev
+-- dev_dev_marker=dev
+-- dev_grid=dev
 -- dev_rng={0x2f90.fd80,0xa4b8.8036}
 
 function dev_init()
@@ -87,7 +87,7 @@ end
 function init_game()
  upd,drw=upd_game,drw_game
  actors,actors_toinit={},{}
- worldw,worldh=128,20
+ worldw,worldh=64,20
  do_z_sort=false
  load_actors()
  -- fade_t=1 --doesn't work with custom palettes
@@ -135,8 +135,9 @@ function drw_game()
  end
 end
 
-function init_gover()
+function init_gover(won)
  upd,drw=upd_gover,drw_gover
+ gover_won=won
 end
 function upd_gover()
  if btnp(5) then
@@ -146,7 +147,7 @@ function upd_gover()
 end
 function drw_gover()
  cls()
- printcj("game over",64,64,7)
+ printcj(gover_won and "win!" or "game over",64,64,7)
 end
 
 function make_actor(...)

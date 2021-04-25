@@ -7,6 +7,10 @@ sfx
 61 hurt
 60 
 
+bugs:
+
+sometimes cats get stuck doing nothing...?? seemed to stand on top of his tool and get broken
+
 tasks:
 
 x make sprites: rocks, pick, stone
