@@ -20,6 +20,9 @@ function gen_player_area()
   end
  end
  local x0,y0=1,rndr(5,worldh-5)
+ if dev_pal_pick then
+  y0=5
+ end
  stamp(T_PATH,x0,y0-1,-1)
  stamp(T_PATH,x0,y0+1,-1)
  mset(x0,y0,T_PLAYER)
