@@ -207,7 +207,7 @@ function update_screenshot_title()
  end
  if time()-_last_ust_time>=1 then
   _last_ust_time=time()
-  extcmd("set_filename",qf("%_%_%_%t%_%_%",
+  extcmd("set_filename",qf("%_%_%_%T%_%_%",
    "deep",
    lpad(90,4),lpad(91,2),lpad(92,2),
    lpad(93,2),lpad(94,2),lpad(95,2)

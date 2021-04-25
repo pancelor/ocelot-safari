@@ -64,12 +64,12 @@ function check_palpick()
    memset(0x5f7f,0xff,1)
   end,
   clipcode=function(self)
-   local s="poke(unpack(split\"0x5f10"
+   local s="\"0x5f10"
    for i=0,15 do
     local c=self.pal[i]
     s..=(c>=0x80 and ",0x8" or ",0x")..hex[c&0xf]
    end
-   s..="\"))\n"
+   s..="\""
    printh(s,"@clip")
    return s
   end,
@@ -139,14 +139,15 @@ function check_palpick()
     end
     self:set_pals()
     choicei=nil
+    self:clipcode()
    end
    self.hoverswap=rect_collide(self.mx,self.my,1,1,self:swap_hb())
    if self.hoverswap and mbtnr(lmb) then
     for i=0,15 do
-     self.pal[i],self.pal[i+16]=self.pal[i+16],self.pal[i]
+     self:swap(i,i+16)
     end
-    self:set_pals()
     choicei=nil
+    self:clipcode()
    end
 
    if choicei then
@@ -203,8 +204,40 @@ function check_palpick()
  palpick:init()
 end
 function upd_pal()
+ update_mouse()
  palpick:update()
 end
 function drw_pal()
  palpick:draw()
+end
+
+
+
+_mouse_buttons=0
+_mouse_buttons_last=0
+function update_mouse()
+ _mouse_buttons,
+ _mouse_buttons_last
+ =
+ stat(34),
+ _mouse_buttons
+end
+lmb=0x1
+rmb=0x2
+mmb=0x4
+function mbtn(mb)
+ return _mouse_buttons&mb~=0
+end
+function mbtnp(mb)
+ return mbtn(mb)
+  and _mouse_buttons_last&mb==0
+end
+function mbtnr(mb)
+ return not mbtn(mb)
+  and _mouse_buttons_last&mb~=0
+end
+
+function poll_mouse()
+ -- returns x,y,wheel
+ return stat(32),stat(33),stat(36)
 end

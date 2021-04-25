@@ -142,16 +142,57 @@ function load_map()
  end
 end
 
+local DAY_LEN,DAY_AND_DUSK_LEN,TOTAL_LEN=100,120,160
 function load_actors()
+ if dev_fast_cycle then
+  DAY_LEN/=5
+  DAY_AND_DUSK_LEN/=5
+  TOTAL_LEN/=5
+ end
+
  map_gen()
  load_map()
 
  hud=make_actor{
   z=-100,
+  dayt=0,
   nohit=true,
-  update=function(self)
+  post_beat=function(self)
+   self.dayt+=1
+   if self.dayt==DAY_LEN then
+    poke(unpack(split(duskpoke)))
+   elseif self.dayt==DAY_AND_DUSK_LEN then
+    poke(unpack(split(nightpoke)))
+    pl.nt_timer=0
+   elseif self.dayt==TOTAL_LEN then
+    self.dayt=0
+    poke(unpack(split(daypoke)))
+   end
+  end,
+  is_night=function(self)
+   return self.dayt>=DAY_AND_DUSK_LEN
   end,
   draw=nocam(function(self)
+   -- day meter
+   local x,y1,w,h,y2=32,120,63,6,2
+   rectfillwh(x+1,y1,w,h,1) --night (full)
+   rectfillwh(x+1,y1,w*DAY_AND_DUSK_LEN/TOTAL_LEN,h,2) --dusk
+   rectfillwh(x+1,y1,w*DAY_LEN/TOTAL_LEN,h,11) --day
+   rectwh(x+1+self.dayt/TOTAL_LEN*w,y1,1,h,8) -- dayt marker
+   rectwh(x,y1,w+2,h,0) --border
+   for x=32,96,8 do
+    pset(x,119,0) --ticks
+   end
+
+   -- hp meter
+   if pl.hp<4 then
+    rectfillwh(x+1,y2,w*pl.hp/4,h,8) --hp
+    rectwh(x,y2,w+2,h,0) --border
+    for x=32,96,16 do
+     pset(x,y2+h,0) --ticks
+    end
+   end
+
    if dev_dev_marker then
     print("dev",0,0,7)
    end
@@ -160,17 +201,27 @@ function load_actors()
  cam=make_actor{
   nohit=true,
   z=1,
+  vox=0,
+  voy=0,
+  shake=function(self,r)
+   r=r or 6
+   local a=rnd()
+   self.vox,self.voy=r*cos(a),r*sin(a)
+  end,
   update=function(self)
    local cx,cy=pl.x,pl.y
+
    -- update camera
    local spd=1
    if dev_ghost then
     spd=8
    end
    camera(
-    approach(%0x5f28,mid(cx*_12-64,worldw*_12-128),spd),
-    approach(%0x5f2a,mid(cy*_12-64,worldh*_12-128),spd)
+    approach(%0x5f28,mid(cx*_12-64,worldw*_12-128),spd)+self.vox,
+    approach(%0x5f2a,mid(cy*_12-64,worldh*_12-128),spd)+self.voy
    )
+   self.vox/=2
+   self.voy/=2
   end,
   draw=function(self)
    -- local cx,cy=peek2(0x5f28,2)
@@ -190,7 +241,9 @@ function load_actors()
      end
     end
    end
-   grid(10)
+   if dev_grid then
+    grid(10)
+   end
   end,
  }
 end
@@ -245,10 +298,42 @@ function actor_player(...)
       self.y+=roty[rot]
      else
       self:move(rot)
-      post_beat()
+      emit"post_beat"
      end
     end
    end
+  end,
+  nt_timer=4,
+  hp=4,
+  post_beat=function(self)
+   --night terrors
+   self.nt_timer-=1
+   if self.nt_timer<=0 then
+    if hud:is_night() then
+     self.nt_timer=4
+     if self:fire_dist2()>5 then
+      cam:shake()
+      self.hp-=1
+      if self.hp<0 then
+       fadeout()
+       init_gover()
+      end
+     end
+    else
+     -- recover during day
+     self.nt_timer=16
+     self.hp=min(self.hp+1,4)
+    end
+   end
+  end,
+  fire_dist2=function(self)
+   local d2=1000
+   for a in all(actors) do
+    if a.is_fire then
+     d2=min(d2,dist2(self.x-a.x,self.y-a.y))
+    end
+   end
+   return d2
   end,
   move=function(self,rot)
    move(self,rot)
@@ -263,10 +348,10 @@ function actor_player(...)
  return pl
 end
 
-function post_beat()
+function emit(key)
  for a in all(actors) do
-  if a.post_beat then
-   a:post_beat()
+  if a[key] then
+   a[key](a)
   end
  end
 end
@@ -425,8 +510,25 @@ function actor_wood(...)
    end
   end,
   on_flint=function(self,ob,rot)
-   --todo more here; spreading?
-   self.s=20
+   die(self)
+   actor_fire{x=self.x,y=self.y}
+  end,
+ },...)
+end
+
+function actor_fire(...)
+ return make_actor({
+  z=-30,
+  is_fire=true,
+  ttl=TOTAL_LEN-DAY_LEN,
+  ani={
+   20,21,
+  },
+  post_beat=function(self)
+   self.ttl-=1
+   if self.ttl<=0 then
+    die(self)
+   end
   end,
  },...)
 end
@@ -494,11 +596,13 @@ function actor_cat(...)
   -- end,
   seek=function(self,rot)
    for dr in all(split"0,1,-1,2") do
-    local sig=self.x+self.y
-    self:move((rot+dr)%4,true)
-    if sig~=self.x+self.y then
-     --we moved! yay, break
-     break
+    if rnd()<0.85 then
+     local sig=self.x+self.y
+     self:move((rot+dr)%4,true)
+     if sig~=self.x+self.y then
+      --we moved! yay, break
+      break
+     end
     end
    end
   end,
@@ -526,7 +630,7 @@ function actor_cat(...)
   spookwait=function(self,t)
    for i=1,t do
     if self.spook then
-     pq"spooked"
+     -- pq"spooked"
      return true
     end
     yield()
@@ -544,7 +648,7 @@ function actor_cat(...)
     
     for i=1,30 do
      --prowling
-     pq("prowl",i,self.x,self.y)
+     -- pq("prowl",i,self.x,self.y)
      while not do_voxy(self) do 
       yield()
      end
@@ -552,7 +656,7 @@ function actor_cat(...)
       break
      end
      if rnd()<0.1 and not dev_spawn_cat then
-      pq"rest"
+      -- pq"rest"
       local speed=self.ani.speed
       self.ani.s,self.ani.speed=38,1000
       wait(rnd(100)+300)
@@ -570,7 +674,7 @@ function actor_cat(...)
     local i=3
     while i>0 do
      --run away
-     pq("run!",i)
+     -- pq("run!",i)
      while not do_voxy(self) do 
       yield()
      end
@@ -589,6 +693,13 @@ function actor_cat(...)
 
     -- drop tool at start
     if self.item==tool then
+     while not offscreen(tool.x0,tool.y0) do
+      yield()
+     end
+     local ob=hit(tool.x0,tool.y0)
+     if ob then
+      die(ob)
+     end
      tool.x,tool.y=tool.x0,tool.y0
     end
    goto start
