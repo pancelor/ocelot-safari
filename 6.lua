@@ -3,34 +3,33 @@
 
 tasks:
 
-x 1
- x make sprites: rocks, pick, stone
- x make actors for above
-x 2
- x map drawing (no gen); no black border...?
-* 3
- * noise. (wip map gen)
+x make sprites: rocks, pick, stone
+ (and make actors)
+x map drawing (no gen); no black border...?
+x fix machete
+* worldgen
+* ocelots
+* day/night cycle
 
 -----
 
 * tool sprites
- * axe
- * machete
- * pick
- * flint
+ x axe
+ x machete
+ x pick
+ x flint
  * magnify glass
 
 * world sprites
- * tree
- * wood
- * vines
- * rock
- * stone
- * fire
+ x tree
+ x wood
+ x vines
+ x rock
+ x stone
+ x fire
  * gem
  * lava(?)
- * river
- * lake
+ x water
 
 * worldgen
  * choose algo
@@ -38,8 +37,8 @@ x 2
    can't guarantee no softlocks (large lake no rocks)
  * implement
 
-* check perf - do trees etc need to be tiles, not actors?
- * probably collision is the big slowdown
+x check perf - do trees etc need to be tiles, not actors?
+ x probably collision is the big slowdown
 
 * sfx
 
@@ -50,5 +49,10 @@ x 2
  * player
  * ocelot
  * demons
+
+---
+
+uh oh you can softlock kinda easy with e.g. machete.
+ is this okay?
 
 ]]

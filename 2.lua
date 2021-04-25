@@ -370,7 +370,7 @@ end
 function filter(arr,f)
  local res={}
  for i,v in pairs(arr) do
-  if (f(v)) add(res,v) 
+  if (f(v)) add(res,v)
  end
  return res
 end
@@ -394,7 +394,7 @@ function fany(table,f)
  for v in all(table) do
   if (f(v)) return true
  end
- return false 
+ return false
 end
 
 function find(arr,f)
@@ -412,7 +412,7 @@ end
 includes=fany
 
 -- concat two arrays together
-function concat(...) 
+function concat(...)
  local t={}
  local args={...}
  for table in all(args) do
@@ -505,6 +505,11 @@ function choose_weighted(opts)
   end
  end
  assert(false)
+end
+
+function rndr(a,b)
+ if b==nil then a,b=0,a end
+ return rnd(b-a)+a
 end
 
 function rect_collide(x0,y0,w0,h0,x2,y2,w2,h2)
@@ -640,9 +645,7 @@ function coupdate(coro,...)
  if costatus(coro)=="suspended" then
   local _,msg=coresume(coro,...)
   if msg then
-   cls(0)
-   cursor(0,0)
-   color(7)
+   print("\^c0\15")
    local fullmsg=trace(coro,msg)
    pq(fullmsg)
    stop(fullmsg)

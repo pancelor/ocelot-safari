@@ -87,15 +87,21 @@ function buts_waiting()
  end
 end
 
-T_AXE=0x22
-T_PICK=0x26
-T_MACHETE=0x03
-T_PLAYER=0x02
-T_PATH=0x00
-T_WATER=0x28
-T_ROCK=0x23
-T_TREE=0x08
-T_VINE=0x05
+-- these are my tile numbers; drawing in the pico-8 map won't work
+T_PATH=0 --special
+T_PLAYER=1
+T_MACHETE=2
+T_VINE=3
+T_TREE=5
+T_AXE=13
+T_ROCK=14
+T_STONE=15
+T_PICK=16
+T_WATER=17 --todo animate with 18
+T_FLINT=19
+function tile_solid(t)
+ return t==T_WATER or t==T_ROCK or t==T_VINE or t==T_TREE
+end
 function translate_tile(t)
  if t==T_AXE then
   return T_PATH,actor_axe
@@ -103,27 +109,32 @@ function translate_tile(t)
   return T_PATH, actor_pick
  elseif t==T_MACHETE then
   return T_PATH, actor_machete
+ elseif t==T_FLINT then
+  return T_PATH, actor_flint
  elseif t==T_PLAYER then
   return T_PATH, actor_player
- elseif t==T_ROCK then
-  return get_11tile(t)
- elseif t==T_TREE then
-  return get_11tile(t)
- elseif t==T_WATER then
-  return get_11tile(t)
- elseif t==T_VINE then
-  return get_11tile(t)
+ elseif tile_solid(t) then
+  return t
  end
+ -- elseif t==T_ROCK then
+ --  return get_11tile(t)
+ -- elseif t==T_TREE then
+ --  return get_11tile(t)
+ -- elseif t==T_WATER then
+ --  return get_11tile(t)
+ -- elseif t==T_VINE then
+ --  return get_11tile(t)
+ -- end
 end
-function get_11tile(t8)
- local y8,x8=divmod(t8,16)
- local sx,sy=x8*8\_12,y8*8\_12
- return sy*_12+sx
-end
+-- function get_11tile(t8)
+--  local y8,x8=divmod(t8,16)
+--  local sx,sy=x8*8\_12,y8*8\_12
+--  return sy*_12+sx
+-- end
 
 function hit_tile(x,y)
  local t=mget(x,y)
- return fget(t,0) and t or nil
+ return tile_solid(t) and t or nil
 end
 
 function load_map()
@@ -143,7 +154,7 @@ function load_map()
 end
 
 function load_actors()
- -- map_gen()
+ map_gen()
  load_map()
  mouse=make_actor{
   nohit=true,
@@ -177,9 +188,13 @@ function load_actors()
   update=function(self)
    local cx,cy=pl.x,pl.y
    -- update camera
+   local spd=1
+   if dev_ghost then
+    spd=8
+   end
    camera(
-    approach(%0x5f28,mid(cx*_12-64,worldw*_12-128)),
-    approach(%0x5f2a,mid(cy*_12-64,worldh*_12-128))
+    approach(%0x5f28,mid(cx*_12-64,worldw*_12-128),spd),
+    approach(%0x5f2a,mid(cy*_12-64,worldh*_12-128),spd)
    )
   end,
   draw=function(self)
@@ -236,7 +251,13 @@ function actor_player(...)
     -- move
     local rot=poll_btns()
     if rot then
-     self:move(rot)
+     if dev_ghost then
+      self.prevx,self.prevy=self.x,self.y
+      self.x+=rotx[rot]
+      self.y+=roty[rot]
+     else
+      self:move(rot)
+     end
     end
    end
   end,
@@ -269,7 +290,12 @@ function actor_player(...)
  return pl
 end
 
-function apply_event(name,name2,rot,x,y)
+function apply_event(self,name,name2,rot,x,y)
+ local tile=hit_tile(x,y)
+ if tile and self.bump_tile then
+  self:bump_tile(tile,x,y)
+ end
+
  local ob=hit(x,y)
  if ob and ob[name] then
   ob[name](ob,rot)
@@ -296,23 +322,22 @@ function actor_machete(...)
   swing=function(self,myrot,plrot)
    self:move(myrot)
    local plrot2=(plrot+2)%4
-   apply_event("on_machete","move",plrot2,xy_from_rot(plrot2,self.prevx,self.prevy))
-   apply_event("on_machete","move",plrot2,xy_from_rot(plrot2,self.x,self.y))
-   apply_event("on_machete","move",myrot,xy_from_rot(myrot,self.x,self.y))
-   -- actor_swipe{
-   --  x=self.x,
-   --  y=self.y,
-   --  rot1=myrot,
-   --  rot2=plrot,
-   -- }
+   -- for p in all{
+   --  pack(plrot2,xy_from_rot(plrot2,self.prevx,self.prevy)),
+   --  pack(plrot2,xy_from_rot(plrot2,self.x,self.y)),
+   --  pack(myrot,xy_from_rot(myrot,self.x,self.y)),
+   -- } do
+   --  local r,x,y=unpack(p)
+   --  local tile=tile_hit(x,y)
+   -- end
+   apply_event(self,"on_machete","move",plrot2,xy_from_rot(plrot2,self.prevx,self.prevy))
+   apply_event(self,"on_machete","move",plrot2,xy_from_rot(plrot2,self.x,self.y))
+   apply_event(self,"on_machete","move",myrot,xy_from_rot(myrot,self.x,self.y))
   end,
-  bump=function(self,ob,rot)
-   if ob.on_machete then
-    ob:on_machete(rot)
-    local x,y=xy_from_rot(rot,self.x,self.y)
+  bump_tile=function(self,tile,x,y)
+   if tile==T_VINE then
+    mset(x,y,T_PATH)
     actor_x{x=x,y=y}
-   elseif ob.move then
-    ob:move(rot)
    end
   end,
   update=function(self)
@@ -345,19 +370,17 @@ function actor_axe(...)
   swing=function(self,myrot,plrot)
    self:move(myrot)
    local plrot2=(plrot+2)%4
-   apply_event("on_axe","move",myrot,xy_from_rot(myrot,self.x,self.y))
-   apply_event("on_axe","move",plrot2,xy_from_rot(plrot2,self.x,self.y))
-   apply_event("on_axe","move",myrot,xy_from_rot(myrot,xy_from_rot(plrot2,self.x,self.y)))
+   apply_event(self,"on_axe","move",myrot,xy_from_rot(myrot,self.x,self.y))
+   apply_event(self,"on_axe","move",plrot2,xy_from_rot(plrot2,self.x,self.y))
+   apply_event(self,"on_axe","move",myrot,xy_from_rot(myrot,xy_from_rot(plrot2,self.x,self.y)))
   end,
-  -- bump=function(self,ob,rot)
-  --  if ob.on_axe then
-  --   ob:on_axe(rot)
-  --   local x,y=xy_from_rot(rot,self.x,self.y)
-  --   actor_x{x=x,y=y}
-  --  elseif ob.move then
-  --   ob:move(rot)
-  --  end
-  -- end,
+  bump_tile=function(self,tile,x,y)
+   if tile==T_TREE then
+    mset(x,y,T_PATH)
+    actor_x{x=x,y=y}
+    actor_wood{x=x,y=y}
+   end
+  end,
  },...)
 end
 
@@ -373,13 +396,30 @@ function actor_pick(...)
   swing=function(self,myrot,plrot)
    self:move(myrot)
    local plrot2=(plrot+2)%4
-   apply_event("on_pick","move",myrot,xy_from_rot(myrot,self.x,self.y))
+   apply_event(self,"on_pick","move",myrot,xy_from_rot(myrot,self.x,self.y))
   end,
-  bump=function(self,ob,rot)
-   if ob.on_pick then
-    ob:on_pick(rot)
-    local x,y=xy_from_rot(rot,self.x,self.y)
+  bump_tile=function(self,tile,x,y)
+   if tile==T_ROCK then
+    mset(x,y,T_PATH)
     actor_x{x=x,y=y}
+    actor_stone{x=x,y=y}
+   end
+  end,
+ },...)
+end
+
+function actor_flint(...)
+ return make_actor({
+  z=-10,
+  ani={
+   19,
+   palt=0,
+  },
+  update=do_voxy,
+  move=move,
+  bump=function(self,ob,rot)
+   if ob.burn then
+    ob:burn(self,rot)
    elseif ob.move then
     ob:move(rot)
    end
@@ -415,12 +455,14 @@ function actor_wood(...)
   palt=0,
   move=move,
   update=do_voxy,
-  bump=function(self,ob,rot)
-   if ob.on_wood then
-    ob:on_wood(self,rot)
-   elseif ob.move then
-    ob:move(rot)
+  bump_tile=function(self,tile,x,y)
+   if tile==T_WATER then
+    mset(x,y,T_PATH)
+    die(self)
    end
+  end,
+  burn=function(self,ob,rot)
+   self.s=20
   end,
  },...)
 end
@@ -444,34 +486,14 @@ function actor_stone(...)
   palt=0,
   move=move,
   update=do_voxy,
-  bump=function(self,ob,rot)
-   if ob.on_stone then
-    ob:on_stone(self,rot)
-   elseif ob.move then
-    ob:move(rot)
+  bump_tile=function(self,tile,x,y)
+   if tile==T_WATER then
+    mset(x,y,T_PATH)
+    die(self)
    end
   end,
  },...)
 end
-
--- function actor_water(...)
---  return make_actor({
---   z=-10,
---   ani={
---    17,18,
---   },
---   -- a bit special: ob as an arg
---   on_wood=function(self,ob,rot)
---    die(self)
---    die(ob)
---   end,
---   -- a bit special: ob as an arg
---   on_stone=function(self,ob,rot)
---    die(self)
---    die(ob)
---   end,
---  },...)
--- end
 
 function actor_x(...)
  return make_actor({
@@ -480,7 +502,7 @@ function actor_x(...)
   s=4,
   script=cocreate(function(self)
    wait(5)
-   self.ani.pal=parse"8=5"
+   self.pal=parse"8=5"
    wait(5)
    die(self)
   end),
@@ -532,7 +554,15 @@ function move(self,rot)
   end
  end
 
- if hit(nx,ny)
+ local tile=hit_tile(nx,ny)
+ if tile then
+  if self.bump_tile then
+   self:bump_tile(tile,nx,ny)
+  end
+ end
+
+ if tile
+ or hit(nx,ny)
  or not inbounds(nx,ny)
  then
   self.vox,self.voy=_12/2*dx,_12/2*dy
@@ -579,6 +609,9 @@ function actor_(...)
   end,
   -- move=move,
   -- bump=function(self,ob)
+  -- 
+  -- end,
+  -- bump_tile=function(self,tile,x,y)
   -- 
   -- end,
   update=function(self)

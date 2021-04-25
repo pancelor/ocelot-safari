@@ -29,19 +29,52 @@ end
 -- end
 
 function map_gen()
+ local N_SPREAD,C_SPREAD=75,0.9
+
  memset(0x2000,0,0x1000)
  for y=0,worldh-1 do
   for x=4,worldw-1 do
    local r=rnd()
    local t=r<0.1 and T_WATER
-    or r<0.3 and T_ROCK
-    or r<0.5 and T_TREE
-    or r<0.8 and T_VINE
+    or r<0.2 and T_ROCK
+    or r<0.4 and T_TREE
+    or r<0.7 and T_VINE
     or T_PATH
    mset(x,y,t)
   end
  end
- mset(2,worldh\2,T_PLAYER)
+ for i=1,N_SPREAD do
+  local x0,y0=rndr(4,worldw)\1,rndr(worldh)\1
+  local t0=mget(x0,y0)
+  local i0,i1,d1=0,7,1
+  -- if t0==T_WATER then
+  --  d=2
+  -- elseif t0==T_TREE then
+  --  i0=4
+  -- elseif t0==T_PATH then
+  --  i1=3 -- straight only
+  --  d=2
+  -- elseif t0==T_ROCK then
+  --  -- good to go
+  -- elseif t0==T_VINE then
+  --  -- good to go
+  -- end
+  
+  for i=i0,i1 do
+   for d=1,d1 do
+    local x,y=x0+d*dirx[i],y0+d*diry[i]
+    if rnd()<C_SPREAD then
+     mset(x,y,t0)
+    end
+   end
+  end
+ end
+ local y=worldh\2
+ mset(2,y,T_PLAYER)
+ mset(1,y-2,T_AXE)
+ mset(1,y-3,T_PICK)
+ mset(2,y-2,T_MACHETE)
+ mset(2,y-3,T_FLINT)
 end
 
 --  --⧗
