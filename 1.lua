@@ -98,35 +98,32 @@ T_TREE=0x08
 T_VINE=0x05
 function translate_tile(t)
  if t==T_AXE then
-  return actor_axe
+  return T_PATH,actor_axe
  elseif t==T_PICK then
-  return actor_pick
+  return T_PATH, actor_pick
  elseif t==T_MACHETE then
-  return actor_machete
+  return T_PATH, actor_machete
  elseif t==T_PLAYER then
-  return actor_player
+  return T_PATH, actor_player
  elseif t==T_ROCK then
-  return actor_rock
+  return get_11tile(t)
  elseif t==T_TREE then
-  return actor_tree
+  return get_11tile(t)
  elseif t==T_WATER then
-  return actor_water
+  return get_11tile(t)
  elseif t==T_VINE then
-  return actor_vine
+  return get_11tile(t)
  end
+end
+function get_11tile(t8)
+ local y8,x8=divmod(t8,16)
+ local sx,sy=x8*8\_12,y8*8\_12
+ return sy*_12+sx
 end
 
 function hit_tile(x,y)
  local t=mget(x,y)
- return fget(t,0) and t
-end
-
-function draw_tile(t,x,y)
- if t==0 then return end
- local y8,x8=divmod(t,16)
- local sx,sy=x8*8\_12,y8*8\_12
- -- todo camera culling?
- sspr(sx*_12,sy*_12,_11,_11,x*_12,y*_12,_11,_11)
+ return fget(t,0) and t or nil
 end
 
 function load_map()
@@ -134,16 +131,19 @@ function load_map()
   for x=0,worldw-1 do
    local tile=mget(x,y)
    if tile~=0 then
-    local ctor=translate_tile(tile)
-    assert(ctor,q(x,y,tile,tostr(tile,1)))
-    ctor{x=x,y=y}
+    local ctor
+    tile,ctor=translate_tile(tile)
+    mset(x,y,tile)
+    if ctor then
+     ctor{x=x,y=y}
+    end
    end
   end
  end
 end
 
 function load_actors()
- map_gen()
+ -- map_gen()
  load_map()
  mouse=make_actor{
   nohit=true,
@@ -183,11 +183,17 @@ function load_actors()
    )
   end,
   draw=function(self)
-   -- for y=0,worldh do
-   --  for x=0,worldw do
-   --   draw_tile(mget(x,y),x,y)
-   --  end
-   -- end
+   -- local cx,cy=peek2(0x5f28,2)
+   local top=128\_12+1
+   for dy=0,top do
+    for dx=0,top do
+     local x,y=%0x5f28\_12+dx,%0x5f2a\_12+dy
+     local t=mget(x,y)
+     if t~=0 then
+      spr12(t,x*_12,y*_12)
+     end
+    end
+   end
    grid(10)
   end,
  }
@@ -381,26 +387,26 @@ function actor_pick(...)
  },...)
 end
 
-function actor_vine(...)
- return make_actor({
-  z=-10,
-  s=3,
-  -- palt=build_palt(0),
-  on_machete=die,
- },...)
-end
+-- function actor_vine(...)
+--  return make_actor({
+--   z=-10,
+--   s=3,
+--   -- palt=build_palt(0),
+--   on_machete=die,
+--  },...)
+-- end
 
-function actor_tree(...)
- return make_actor({
-  z=-10,
-  s=5,
-  palt=build_palt(0),
-  on_axe=function(self)
-   actor_wood{x=self.x,y=self.y}
-   die(self)
-  end,
- },...)
-end
+-- function actor_tree(...)
+--  return make_actor({
+--   z=-10,
+--   s=5,
+--   palt=build_palt(0),
+--   on_axe=function(self)
+--    actor_wood{x=self.x,y=self.y}
+--    die(self)
+--   end,
+--  },...)
+-- end
 
 function actor_wood(...)
  return make_actor({
@@ -419,17 +425,17 @@ function actor_wood(...)
  },...)
 end
 
-function actor_rock(...)
- return make_actor({
-  z=-10,
-  s=14,
-  palt=build_palt(0),
-  on_pick=function(self)
-   actor_stone{x=self.x,y=self.y}
-   die(self)
-  end,
- },...)
-end
+-- function actor_rock(...)
+--  return make_actor({
+--   z=-10,
+--   s=14,
+--   palt=build_palt(0),
+--   on_pick=function(self)
+--    actor_stone{x=self.x,y=self.y}
+--    die(self)
+--   end,
+--  },...)
+-- end
 
 function actor_stone(...)
  return make_actor({
@@ -448,24 +454,24 @@ function actor_stone(...)
  },...)
 end
 
-function actor_water(...)
- return make_actor({
-  z=-10,
-  ani={
-   17,18,
-  },
-  -- a bit special: ob as an arg
-  on_wood=function(self,ob,rot)
-   die(self)
-   die(ob)
-  end,
-  -- a bit special: ob as an arg
-  on_stone=function(self,ob,rot)
-   die(self)
-   die(ob)
-  end,
- },...)
-end
+-- function actor_water(...)
+--  return make_actor({
+--   z=-10,
+--   ani={
+--    17,18,
+--   },
+--   -- a bit special: ob as an arg
+--   on_wood=function(self,ob,rot)
+--    die(self)
+--    die(ob)
+--   end,
+--   -- a bit special: ob as an arg
+--   on_stone=function(self,ob,rot)
+--    die(self)
+--    die(ob)
+--   end,
+--  },...)
+-- end
 
 function actor_x(...)
  return make_actor({
@@ -537,10 +543,10 @@ function move(self,rot)
  self.lastrot=rot
 end
 
--- given a screenpos, return a worldpos
-function ppi(x,y)
- return (x+%0x5f28)\_12,(y+%0x5f2a)\_12
-end
+-- -- given a screenpos, return a worldpos
+-- function ppi(x,y)
+--  return (x+%0x5f28)\_12,(y+%0x5f2a)\_12
+-- end
 
 -- moves self.vox->0 and self.voy->0
 -- returns whether they are at 0
