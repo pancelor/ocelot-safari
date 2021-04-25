@@ -196,53 +196,21 @@ end
 -- pico-8 stuff
 --
 
-_mouse_buttons=0
-_mouse_buttons_last=0
-function update_mouse()
- _mouse_buttons,
- _mouse_buttons_last
- =
- stat(34),
- _mouse_buttons
-end
-lmb=0x1
-rmb=0x2
-mmb=0x4
-function mbtn(mb)
- return _mouse_buttons&mb~=0
-end
-function mbtnp(mb)
- return mbtn(mb)
-  and _mouse_buttons_last&mb==0
-end
-function mbtnr(mb)
- return not mbtn(mb)
-  and _mouse_buttons_last&mb~=0
-end
-
-function poll_mouse()
- -- returns x,y,wheel
- return stat(32),stat(33),stat(36)
-end
-
-btn_press,
-btn_down,
-btn_release=0x1,0x2,0x4
-function mbtn_info(mb)
- return
-  boolint(mbtnp(mb),btn_press)
-  |boolint(mbtn(mb),btn_down)
-  |boolint(mbtnr(mb),btn_release)
-end
-
 _last_ust_time=0
 function update_screenshot_title()
+ function lpad(s,n)
+  s=tostr(stat(s))
+  while #s<n do
+   s="0"..s
+  end
+  return s
+ end
  if time()-_last_ust_time>=1 then
   _last_ust_time=time()
   extcmd("set_filename",qf("%_%_%_%t%_%_%",
    "deep",
-   stat(90),stat(91),stat(92),
-   stat(93),stat(94),stat(95)
+   lpad(90,4),lpad(91,2),lpad(92,2),
+   lpad(93,2),lpad(94,2),lpad(95,2)
   ))
  end
 end

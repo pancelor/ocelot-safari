@@ -31,7 +31,6 @@ function dev_init()
  if dev_pal_persist then
   poke(0x5f2e,1)
  end
- poke(0x5f2d,1) --enable mouse
  
  if dev_rng then
   restore_rng(unpack(dev_rng))
@@ -62,7 +61,6 @@ function _init()
 end
 function _update60()
  check_palpick()
- update_mouse()
  update_screenshot_title()
  upd()
 end

@@ -146,21 +146,6 @@ function load_actors()
  map_gen()
  load_map()
 
- mouse=make_actor{
-  nohit=true,
-  x=0,
-  y=0,
-  s=16,
-  z=-200,
-  update=function(self)
-   local lastx,lasty=self.x,self.y
-   local mx,my,wheel=poll_mouse()
-   self.x,self.y=mx,my
-  end,
-  draw=nocam(function(self)
-   sspr(120,24,8,8,self.x-1,self.y-1)
-  end),
- }
  hud=make_actor{
   z=-100,
   nohit=true,
