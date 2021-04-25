@@ -10,39 +10,97 @@ function pause()
  -- end
 end
 
-function countwalls(x,y,target, d)
- local n=0
- for i=0,7 do
-  local dx,dy=getdir(i)
-  for j=1,(d or 1) do
-   if mget(x+j*dx,y+j*dy)==target then
-    n+=1
-   end
-  end
- end
- return n
-end
-
 -- function gen_mob(x,y,typ)
 --  mset(x,y,mob_tile[typ])
 --  return add_mob(typ,x,y)
 -- end
 
 function map_gen()
- local N_SPREAD,C_SPREAD=75,0.9
+ gen_rnd()
+ gen_adjust()
+ local y=worldh\2
+ mset(2,y,T_PLAYER)
+ mset(1,y-2,T_AXE)
+ mset(1,y-3,T_PICK)
+ mset(2,y-2,T_MACHETE)
+ mset(2,y-3,T_FLINT)
+end
 
+function gen_rnd()
  memset(0x2000,0,0x1000)
  for y=0,worldh-1 do
   for x=4,worldw-1 do
    local r=rnd()
-   local t=r<0.1 and T_WATER
-    or r<0.2 and T_ROCK
-    or r<0.4 and T_TREE
-    or r<0.7 and T_VINE
-    or T_PATH
+   local t=r<0.5 and T_TREE
+    or r<0.9 and T_VINE
+    or T_ROCK
    mset(x,y,t)
   end
  end
+end
+
+function stamp(tile,x,y,bits, chance)
+ -- 0b000
+ --   000
+ --   000
+ for i=0,8 do
+  if bits&(1<<(8-i))>0 and (not chance or rnd()<chance) then
+   mset(x+i%3-1,y+i\3-1,tile)
+  end
+ end
+end
+
+function drifter(p0,pmin,pmax)
+ return {
+  p=p0,
+  pmin=pmin,
+  pmax=pmax,
+  get=function(self)
+   local res=self.p
+   local dp=(self.pmax-self.pmin)/10
+   self.p=mid(
+    self.pmin,self.pmax,
+    self.p+rndr(-dp,dp)
+   )
+   pq(res)
+   return res
+  end
+ }
+end
+ 
+function gen_adjust()
+ local C_ROCK,C_WATER=0.3,0.8
+
+ -- rocks
+ for cell in all(mapfindall(T_ROCK)) do
+  stamp(T_ROCK,cell.x,cell.y,0b110110110,C_ROCK)
+ end
+
+ --rivers
+ local x=0
+ while x<worldw do
+  x+=(rndr(1,5)+rndr(1,5)+rndr(1,5)+rndr(12))\1
+  local r=1
+  local c=drifter(C_WATER,0.2,0.95)
+  for y=0,worldh-1 do
+   for dx=-r,r do
+    if rnd()<c:get() then
+     mset(x+dx,y,T_WATER)
+    end
+   end
+   if rnd()<0.4 then
+    x+=rndr(-1,3)\1
+   end
+   r+=rndr(-1,2)\1
+   r=mid(1,r,4)
+  end
+ end
+
+end
+function foo()
+
+
+ local N_SPREAD,C_SPREAD=75,0.9
  for i=1,N_SPREAD do
   local x0,y0=rndr(4,worldw)\1,rndr(worldh)\1
   local t0=mget(x0,y0)
@@ -69,13 +127,35 @@ function map_gen()
    end
   end
  end
- local y=worldh\2
- mset(2,y,T_PLAYER)
- mset(1,y-2,T_AXE)
- mset(1,y-3,T_PICK)
- mset(2,y-2,T_MACHETE)
- mset(2,y-3,T_FLINT)
 end
+
+function mapfindall(t)
+ local res={}
+ for y=0,worldh-1 do
+  for x=0,worldw-1 do
+   if mget(x,y)==t then
+    add(res,{x=x,y=y})
+   end
+  end
+ end
+ return res
+end
+
+
+
+
+-- function countwalls(x,y,target, d)
+--  local n=0
+--  for i=0,7 do
+--   local dx,dy=getdir(i)
+--   for j=1,(d or 1) do
+--    if mget(x+j*dx,y+j*dy)==target then
+--     n+=1
+--    end
+--   end
+--  end
+--  return n
+-- end
 
 --  --⧗
 --  local density0,ca_to_floor,ca_to_wall,nca=0.5,-1,1,2
@@ -278,18 +358,6 @@ end
 --  for i=0,7 do
 --   if mget(x+dirx[i],y+diry[i])==target then
 --    res+=1<<i
---   end
---  end
---  return res
--- end
-
--- function mapfindall(t)
---  local res={}
---  for y=0,map_size_m1 do
---   for x=0,map_size_m1 do
---    if mget(x,y)==t then
---     add(res,{x=x,y=y})
---    end
 --   end
 --  end
 --  return res
