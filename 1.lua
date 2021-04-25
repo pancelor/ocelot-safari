@@ -160,7 +160,9 @@ function load_actors()
   dayt=0,
   nohit=true,
   script=cocreate(function(self)
-   poke(unpack(split(daypoke)))
+   if not dev_pal_persist then
+    poke(unpack(split(daypoke)))
+   end
    while 1 do
     wait(CLOCK_LEN)
     emit"clock_tick"
