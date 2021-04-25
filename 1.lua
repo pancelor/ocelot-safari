@@ -13,17 +13,21 @@ function update_btns()
  end
 
  local btnr=(btn()&btn_last)^^btn_last
+ -- pq("btn(),btn_last,btnr\n",tobin(btn()),tobin(btn_last),tobin(btnr))
  for b=0,3 do
   local mask=1<<b
   if btnr&mask>0 then
    local ix=_recent_ix(b)
-   assert(ix,ix)
-   if buts[ix].seen then
-    -- pq("seen; release now",b)
-    deli(buts,ix)
-   else
-    -- pq("not seen yet; release later",b)
-    add(buts_del,buts[ix])
+   if ix then
+    if buts[ix].seen then
+     -- pq("seen; release now",b)
+     deli(buts,ix)
+    else
+     -- pq("not seen yet; release later",b)
+     add(buts_del,buts[ix])
+    end
+   elseif dev then
+    pq"=====BUTTON RELEASED SOMEHOW====="
    end
   end
  end
@@ -141,6 +145,7 @@ end
 function load_actors()
  map_gen()
  load_map()
+
  mouse=make_actor{
   nohit=true,
   x=0,
@@ -162,7 +167,7 @@ function load_actors()
   update=function(self)
   end,
   draw=nocam(function(self)
-   if dev then
+   if dev_dev_marker then
     print("dev",0,0,7)
    end
   end),
@@ -189,8 +194,14 @@ function load_actors()
     for dx=0,top do
      local x,y=%0x5f28\_12+dx,%0x5f2a\_12+dy
      local t=mget(x,y)
+
+     -- jitter
+     local dx,dy=divmod((x*x+y*y)&0xf,4)
+     function f(x) return x&1>0 and 0 or (x&2)-1 end
+     dx,dy=f(dx),f(dy)
+
      if t~=0 then
-      spr12(t,x*_12,y*_12)
+      spr12(t,x*_12+dx,y*_12+dy)
      end
     end
    end
@@ -198,6 +209,16 @@ function load_actors()
   end,
  }
 end
+
+-- function fixedrng(f)
+--  local rng0,rng1=rng_state()
+--  return function(...)
+--   local rnga,rngb=rng_state()
+--   restore_rng(rng0,rng1)
+--   f(...)
+--   restore_rng(rnga,rngb)
+--  end
+-- end
 
 function actor_player(...)
  pl=make_actor({
@@ -239,6 +260,7 @@ function actor_player(...)
       self.y+=roty[rot]
      else
       self:move(rot)
+      post_beat()
      end
     end
    end
@@ -251,24 +273,17 @@ function actor_player(...)
    elseif rot==2 then
     self.flpx=true
    end
-
-   local item=self.item
-   if item then
-    local dx,dy=self.prevx-item.x,self.prevy-item.y
-    for r=0,3 do
-     if rotx[r]==dx and roty[r]==dy then
-      if rot~=r and item.swing then
-       item:swing(r,rot)
-      else
-       item:move(r)
-      end
-      break
-     end
-    end
-   end
   end,
  },...)
  return pl
+end
+
+function post_beat()
+ for a in all(actors) do
+  if a.post_beat then
+   a:post_beat()
+  end
+ end
 end
 
 function apply_event(self,name,name2,rot,x,y)
@@ -290,9 +305,10 @@ function actor_machete(...)
  return make_actor({
   z=-10,
   s=2,
+  init=tool_init,
   move=move,
-  swing=function(self,myrot,plrot)
-   self:move(myrot)
+  swing=function(self,myrot,plrot,ignore_tiles)
+   self:move(myrot,ignore_tiles)
    local plrot2=(plrot+2)%4
    -- for p in all{
    --  pack(plrot2,xy_from_rot(plrot2,self.prevx,self.prevy)),
@@ -320,10 +336,11 @@ function actor_axe(...)
  return make_actor({
   z=-10,
   s=13,
+  init=tool_init,
   update=do_voxy,
   move=move,
-  swing=function(self,myrot,plrot)
-   self:move(myrot)
+  swing=function(self,myrot,plrot,ignore_tiles)
+   self:move(myrot,ignore_tiles)
    local plrot2=(plrot+2)%4
    apply_event(self,"on_axe","move",myrot,xy_from_rot(myrot,self.x,self.y))
    apply_event(self,"on_axe","move",plrot2,xy_from_rot(plrot2,self.x,self.y))
@@ -350,10 +367,11 @@ function actor_pick(...)
  return make_actor({
   z=-10,
   s=16,
+  init=tool_init,
   update=do_voxy,
   move=move,
-  swing=function(self,myrot,plrot)
-   self:move(myrot)
+  swing=function(self,myrot,plrot,ignore_tiles)
+   self:move(myrot,ignore_tiles)
    local plrot2=(plrot+2)%4
    apply_event(self,"on_pick","move",myrot,xy_from_rot(myrot,self.x,self.y))
   end,
@@ -378,6 +396,7 @@ function actor_flint(...)
  return make_actor({
   z=-10,
   s=19,
+  init=tool_init,
   update=do_voxy,
   move=move,
   bump=function(self,ob,rot)
@@ -394,6 +413,7 @@ function actor_mag(...)
  return make_actor({
   z=-10,
   s=24,
+  init=tool_init,
   update=do_voxy,
   move=move,
   bump=function(self,ob,rot)
@@ -468,6 +488,129 @@ function actor_x(...)
  },...)
 end
 
+function tool_init(self)
+ self.cat=actor_cat{tool=self}
+ self.x0,self.y0=self.x,self.y
+end
+
+function actor_cat(...)
+ return make_actor({
+  z=-30,
+  nohit=true,
+  ani={
+   36,37,
+  },
+  vox=0,
+  voy=0,
+  -- tool=ob,
+  -- item=nil,
+  -- init=function(self)
+  --  --stub
+  -- end,
+  seek=function(self,rot)
+   for dr in all(split"0,1,-1,2") do
+    local sig=self.x+self.y
+    self:move((rot+dr)%4,true)
+    if sig~=self.x+self.y then
+     --we moved! yay, break
+     break
+    end
+   end
+  end,
+  move=function(self,rot,...)
+   move(self,rot,...)
+   if rot==0 then
+    self.ani.flpx=false
+   elseif rot==2 then
+    self.ani.flpx=true
+   end
+  end,
+  bump=noop, -- can't push anything
+  post_beat=function(self)
+   self.timer-=1
+   if self.timer==0 then
+    if self.tool.x>=(dev_spawn_cat and 2 or 8) then
+     self.x,self.y=self.tool.x,rnd{-1,worldh}
+    else
+     self.timer=6
+    end
+   end
+
+   self.spook=dist2(self.x-pl.x,self.y-pl.y)<=5
+  end,
+  spookwait=function(self,t)
+   for i=1,t do
+    if self.spook then
+     pq"spooked"
+     return true
+    end
+    yield()
+   end
+  end,
+  script=cocreate(function(self)
+   local tool=self.tool
+   ::start::
+    self.x,self.y,self.timer,self.item=-1,-1,dev_spawn_cat and 1 or 32,nil
+
+    while self.timer>0 do
+     --wait for timer
+     yield()
+    end
+    
+    for i=1,30 do
+     --prowling
+     pq("prowl",i,self.x,self.y)
+     while not do_voxy(self) do 
+      yield()
+     end
+     if self:spookwait(60) then
+      break
+     end
+     if rnd()<0.1 and not dev_spawn_cat then
+      pq"rest"
+      local speed=self.ani.speed
+      self.ani.s,self.ani.speed=38,1000
+      wait(rnd(100)+300)
+      self.ani.speed=speed
+     end
+     local rot,arrived=get_rot_from_diff(tool.x-self.x,tool.y-self.y)
+     if arrived then
+      self.item=tool
+      break
+     else
+      self:seek(rot)
+     end
+    end
+
+    local i=3
+    while i>0 do
+     --run away
+     pq("run!",i)
+     while not do_voxy(self) do 
+      yield()
+     end
+     wait(20)
+     local rot=get_rot_from_diff(self.x-pl.x,self.y-pl.y)
+     self:seek(rot)
+     -- if not inbounds(self.x,self.y) then
+     --  i=0
+     -- else
+     if offscreen(self.x,self.y) then
+      i-=1
+     else
+      i=3
+     end
+    end
+
+    -- drop tool at start
+    if self.item==tool then
+     tool.x,tool.y=tool.x0,tool.y0
+    end
+   goto start
+  end),
+ },...)
+end
+
 -- function actor_swipe(...)
 --  return make_actor({
 --   z=-100,
@@ -490,15 +633,16 @@ end
 --  },...)
 -- end
 
--- function move_towards(self,x,y)
---  local dx,dy=x-self.x,y-self.y
---  if abs(dy)<abs(dx) then
---   return self:move(dx<0 and 2 or 0)
---  else
---   return self:move(dy<0 and 1 or 3)
---  end
--- end
-function move(self,rot)
+function get_rot_from_diff(dx,dy)
+ local ax,ay=abs(dx),abs(dy)
+ local arrived=ax+ay==1
+ if ay<ax then
+  return (dx<0 and 2 or 0),arrived
+ else
+  return (dy<0 and 1 or 3),arrived
+ end
+end
+function move(self,rot, ignore_tiles)
  local dx,dy=rotx[rot],roty[rot]
  local nx,ny=self.x+dx,self.y+dy
 
@@ -512,15 +656,19 @@ function move(self,rot)
  end
 
  local tile=hit_tile(nx,ny)
- if tile then
-  if self.bump_tile then
-   self:bump_tile(tile,nx,ny)
-  end
+ if tile
+ and ignore_tiles
+ and tile~=T_WATER
+ then
+  tile=nil
+ end
+ if tile and self.bump_tile then
+  self:bump_tile(tile,nx,ny)
  end
 
  if tile
  or hit(nx,ny)
- or not inbounds(nx,ny)
+ or (not ignore_tiles and not inbounds(nx,ny))
  then
   self.vox,self.voy=_12/2*dx,_12/2*dy
  else
@@ -528,12 +676,22 @@ function move(self,rot)
   self.vox,self.voy=-_11*dx,-_11*dy
  end
  self.lastrot=rot
-end
 
--- -- given a screenpos, return a worldpos
--- function ppi(x,y)
---  return (x+%0x5f28)\_12,(y+%0x5f2a)\_12
--- end
+ local item=self.item
+ if item then
+  local dx,dy=self.prevx-item.x,self.prevy-item.y
+  for r=0,3 do
+   if rotx[r]==dx and roty[r]==dy then
+    if rot~=r and item.swing then
+     item:swing(r,rot,true)
+    else
+     item:move(r,true)
+    end
+    break
+   end
+  end
+ end
+end
 
 -- moves self.vox->0 and self.voy->0
 -- returns whether they are at 0

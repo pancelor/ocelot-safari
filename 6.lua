@@ -10,9 +10,16 @@ x fix machete
 x worldgen
 x paths (worldgen)
 x starting area (worldgen)
+x ocelots!
 
 * day/night cycle
-* ocelots
+ * bump a fire to sleep
+* tutorial
+* music/sfx
+* art pass
+ * alt sprites
+ x 1~2 pixel jitter per sprite
+ * swipe sprites
 
 -----
 

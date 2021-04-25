@@ -19,9 +19,10 @@ end
 
 -- x,y: 12-scaled world pos
 -- vox,voy: 1-scaled visual offset
--- px,py: 1-scaled sprite pivot
 function draw_s(self,s)
  local ani=self.ani or self
+ -- ani.perm_vox=ani.perm_vox or rnd(split"0,0,1,-1")
+ -- ani.perm_voy=ani.perm_voy or rnd(split"0,0,1,-1")
  local pal_=ani.pal or {}
  palt(ani.palt)
  pal(pal_)
@@ -39,6 +40,10 @@ function xy_from_rot(rot, x,y)
  return (x or 0)+rotx[rot],(y or 0)+roty[rot]
 end
 
+function offscreen(x,y)
+ return not rect_collide(%0x5f28,%0x5f2a,128,128,x*_12,y*_12,12,12)
+end
+
 function toscreen(x,y)
  return x*_12,y*_12
 end
@@ -46,4 +51,8 @@ end
 function inbounds(x,y)
  return 0<=x and x<worldw
     and 0<=y and y<worldh
+end
+
+function dist2(dx,dy)
+ return dx^2+dy^2
 end

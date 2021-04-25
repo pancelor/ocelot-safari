@@ -13,14 +13,19 @@ todo:
   maybe b/c it doesn't get a chance to run upd_game that frame??
 ]]
 
---todo: t3: print("\^c0\15")
+--todo: t3:
+-- print("\^c0\15")
+-- fixedrng ?
 
 dev=true
+-- dev_dev_marker=dev
 dev_pal_pick=dev --tab to swap colors
 dev_pal_persist=dev
 dev_grid=dev
+-- dev_spawn_cat=dev
+-- dev_spawn_gem=dev
 -- dev_ghost=dev
---dev_rng={0x5438.c744,0xfe04.4447}
+-- dev_rng={0x2f90.fd80,0xa4b8.8036}
 
 function dev_init()
  if dev_pal_persist then
@@ -37,6 +42,7 @@ end
 
 function _init()
  printh("---")
+
  --screen palette
  poke(unpack(split"0x5f10,0x0,0x81,0x8c,0xf,0x84,0x4,0x86,0xa,0x88,0x89,0x9,0x87,0x8a,0xb,0x8b,0x3"))
 
@@ -48,7 +54,6 @@ function _init()
  rot_from_but=arr0(2,split"0,1,3")
  rotx=arr0(1,split"0,-1,0")
  roty=arr0(0,split"-1,0,1")
- fade_pal=split"0,1,1,2,1,13,6,4,4,9,3,13,1,13,14"
 
  init_game()
  if dev then 
@@ -66,6 +71,12 @@ function _draw()
  cls(4)
  drw()
  check_fade()
+ -- nocam(draw_brb)()
+end
+
+function draw_brb()
+ oprint8("break time!",40,40,3,0)
+ oprint8("back in 10~20min",40,50,3,0)
 end
 
 function init_game()
@@ -113,7 +124,7 @@ function drw_game()
  for ob in all(actors) do
   if ob.draw then
    ob:draw()
-  elseif rect_collide(cx,cy,128,128,ob.x*_12,ob.y*_12,12,12) then
+  elseif not offscreen(ob.x,ob.y) then
    draw_s(ob)
   end
  end

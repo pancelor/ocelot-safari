@@ -4,7 +4,9 @@ function map_gen()
  gen_rnd()
  gen_adjust()
  gen_player_area()
- mset(10,10,T_GEM)
+ if dev_spawn_gem then
+  mset(10,10,T_GEM)
+ end
 end
 
 function gen_player_area()
@@ -19,9 +21,9 @@ function gen_player_area()
  stamp(T_PATH,x0,y0-1,-1)
  stamp(T_PATH,x0,y0+1,-1)
  mset(x0,y0,T_PLAYER)
- mset(x0-1,y0-2,T_AXE)
+ mset(x0-1,y0-2,T_MAG)
  mset(x0,  y0-2,T_PICK)
- mset(x0+1,y0-2,T_MAG)
+ mset(x0+1,y0-2,T_AXE)
  mset(x0-1,y0+2,T_FLINT)
  mset(x0,  y0+2,T_MACHETE)
  -- mset(x0+1,y0+2,T_PLAYER)
