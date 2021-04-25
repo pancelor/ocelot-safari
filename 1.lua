@@ -143,6 +143,7 @@ function load_map()
 end
 
 function load_actors()
+ map_gen()
  load_map()
  mouse=make_actor{
   x=0,
@@ -461,10 +462,12 @@ function actor_water(...)
    17,18,
    palt=0,
   },
+  -- a bit special: ob as an arg
   on_wood=function(self,ob,rot)
    die(self)
    die(ob)
   end,
+  -- a bit special: ob as an arg
   on_stone=function(self,ob,rot)
    die(self)
    die(ob)

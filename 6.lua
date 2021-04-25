@@ -9,7 +9,7 @@ x 1
 x 2
  x map drawing (no gen); no black border...?
 * 3
- * wip map gen
+ * noise. (wip map gen)
 
 -----
 
