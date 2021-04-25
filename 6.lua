@@ -9,9 +9,10 @@ x map drawing (no gen); no black border...?
 x fix machete
 x worldgen
 x paths (worldgen)
-* starting area (worldgen)
-* ocelots
+x starting area (worldgen)
+
 * day/night cycle
+* ocelots
 
 -----
 
@@ -20,7 +21,7 @@ x paths (worldgen)
  x machete
  x pick
  x flint
- * magnify glass
+ x magnify glass
 
 * world sprites
  x tree

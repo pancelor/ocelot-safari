@@ -99,6 +99,8 @@ T_STONE=15
 T_PICK=16
 T_WATER=17 --todo animate with 18
 T_FLINT=19
+T_MAG=24
+T_GEM=25
 function tile_solid(t)
  return t==T_WATER or t==T_ROCK or t==T_VINE or t==T_TREE
 end
@@ -111,6 +113,10 @@ function translate_tile(t)
   return T_PATH, actor_machete
  elseif t==T_FLINT then
   return T_PATH, actor_flint
+ elseif t==T_MAG then
+  return T_PATH, actor_mag
+ elseif t==T_GEM then
+  return T_PATH, actor_gem
  elseif t==T_PLAYER then
   return T_PATH, actor_player
  elseif tile_solid(t) then
@@ -217,10 +223,7 @@ end
 function actor_player(...)
  pl=make_actor({
   z=-20,
-  ani={
-   1,
-   palt=0,
-  },
+  s=1,
   -- item=nil,
   lastrot=0,
   init=function(self)
@@ -266,9 +269,9 @@ function actor_player(...)
 
    -- flp
    if rot==0 then
-    self.ani.flpx=false
+    self.flpx=false
    elseif rot==2 then
-    self.ani.flpx=true
+    self.flpx=true
    end
 
    local item=self.item
@@ -308,17 +311,8 @@ end
 function actor_machete(...)
  return make_actor({
   z=-10,
-  ani={
-   2,
-   palt=0,
-  },
-  init=function(self)
-   --stub
-  end,
-  move=function(self,rot)
-   move(self,rot)
-   -- actor_x{x=self.x,y=self.y}
-  end,
+  s=2,
+  move=move,
   swing=function(self,myrot,plrot)
    self:move(myrot)
    local plrot2=(plrot+2)%4
@@ -340,31 +334,14 @@ function actor_machete(...)
     actor_x{x=x,y=y}
    end
   end,
-  update=function(self)
-   if do_voxy(self) then
-    --stub
-   end
-  end,
-  script=cocreate(function(self)
-   while 1 do
-    --stub
-    yield()
-   end
-  end),
-  draw=function(self)
-   --stub
-   draw_s(self)
-  end,
+  update=do_voxy,
  },...)
 end
 
 function actor_axe(...)
  return make_actor({
   z=-10,
-  ani={
-   13,
-   palt=0,
-  },
+  s=13,
   update=do_voxy,
   move=move,
   swing=function(self,myrot,plrot)
@@ -394,10 +371,7 @@ end
 function actor_pick(...)
  return make_actor({
   z=-10,
-  ani={
-   16,
-   palt=0,
-  },
+  s=16,
   update=do_voxy,
   move=move,
   swing=function(self,myrot,plrot)
@@ -425,15 +399,28 @@ end
 function actor_flint(...)
  return make_actor({
   z=-10,
-  ani={
-   19,
-   palt=0,
-  },
+  s=19,
   update=do_voxy,
   move=move,
   bump=function(self,ob,rot)
-   if ob.burn then
-    ob:burn(self,rot)
+   if ob.on_flint then
+    ob:on_flint(self,rot)
+   elseif ob.move then
+    ob:move(rot)
+   end
+  end,
+ },...)
+end
+
+function actor_mag(...)
+ return make_actor({
+  z=-10,
+  s=24,
+  update=do_voxy,
+  move=move,
+  bump=function(self,ob,rot)
+   if ob.on_mag then
+    ob:on_mag(self,rot)
    elseif ob.move then
     ob:move(rot)
    end
@@ -466,7 +453,6 @@ function actor_wood(...)
  return make_actor({
   z=-10,
   s=12,
-  palt=0,
   move=move,
   update=do_voxy,
   on_axe=die,
@@ -476,8 +462,21 @@ function actor_wood(...)
     die(self)
    end
   end,
-  burn=function(self,ob,rot)
+  on_flint=function(self,ob,rot)
+   --todo more here; spreading?
    self.s=20
+  end,
+ },...)
+end
+
+function actor_gem(...)
+ return make_actor({
+  z=-10,
+  s=25,
+  move=move,
+  update=do_voxy,
+  on_mag=function(self,rot)
+   pq"winner"
   end,
  },...)
 end
@@ -498,7 +497,6 @@ function actor_stone(...)
  return make_actor({
   z=-10,
   s=15,
-  palt=0,
   move=move,
   update=do_voxy,
   on_pick=die,
@@ -529,9 +527,7 @@ end
 --  return make_actor({
 --   z=-100,
 --   nohit=true,
---   ani={
---    4,
---   },
+--   s=4,
 --   script=cocreate(function(self)
 --    wait(5)
 --    self.ani.pal=parse"8=5"
@@ -616,10 +612,7 @@ end
 function actor_(...)
  return make_actor({
   z=-10,
-  ani={
-   0,
-   palt=0,
-  },
+  s=0,
   init=function(self)
    --stub
   end,
