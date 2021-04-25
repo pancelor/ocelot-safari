@@ -110,10 +110,11 @@ function upd_game()
 end
 
 function drw_game()
+ local cx,cy=peek2(0x5f28,2)
  for ob in all(actors) do
   if ob.draw then
    ob:draw()
-  elseif ob.ani then
+  elseif rect_collide(cx,cy,128,128,ob.x*_12,ob.y*_12,12,12) then
    draw_s(ob)
   end
  end

@@ -146,6 +146,7 @@ function load_actors()
  map_gen()
  load_map()
  mouse=make_actor{
+  nohit=true,
   x=0,
   y=0,
   s=16,
@@ -161,6 +162,7 @@ function load_actors()
  }
  hud=make_actor{
   z=-100,
+  nohit=true,
   update=function(self)
   end,
   draw=nocam(function(self)
@@ -170,6 +172,7 @@ function load_actors()
   end),
  }
  cam=make_actor{
+  nohit=true,
   z=1,
   update=function(self)
    local cx,cy=pl.x,pl.y
@@ -324,17 +327,6 @@ function actor_machete(...)
  },...)
 end
 
-function actor_vine(...)
- return make_actor({
-  z=-10,
-  ani={
-   3,
-   palt=build_palt(0),
-  },
-  on_machete=die,
- },...)
-end
-
 function actor_axe(...)
  return make_actor({
   z=-10,
@@ -389,13 +381,20 @@ function actor_pick(...)
  },...)
 end
 
+function actor_vine(...)
+ return make_actor({
+  z=-10,
+  s=3,
+  -- palt=build_palt(0),
+  on_machete=die,
+ },...)
+end
+
 function actor_tree(...)
  return make_actor({
   z=-10,
-  ani={
-   5,
-   palt=build_palt(0),
-  },
+  s=5,
+  palt=build_palt(0),
   on_axe=function(self)
    actor_wood{x=self.x,y=self.y}
    die(self)
@@ -406,10 +405,8 @@ end
 function actor_wood(...)
  return make_actor({
   z=-10,
-  ani={
-   12,
-   palt=0,
-  },
+  s=12,
+  palt=0,
   move=move,
   update=do_voxy,
   bump=function(self,ob,rot)
@@ -425,10 +422,8 @@ end
 function actor_rock(...)
  return make_actor({
   z=-10,
-  ani={
-   14,
-   palt=build_palt(0),
-  },
+  s=14,
+  palt=build_palt(0),
   on_pick=function(self)
    actor_stone{x=self.x,y=self.y}
    die(self)
@@ -439,10 +434,8 @@ end
 function actor_stone(...)
  return make_actor({
   z=-10,
-  ani={
-   15,
-   palt=0,
-  },
+  s=15,
+  palt=0,
   move=move,
   update=do_voxy,
   bump=function(self,ob,rot)
@@ -460,7 +453,6 @@ function actor_water(...)
   z=-10,
   ani={
    17,18,
-   palt=0,
   },
   -- a bit special: ob as an arg
   on_wood=function(self,ob,rot)
@@ -479,9 +471,7 @@ function actor_x(...)
  return make_actor({
   z=-100,
   nohit=true,
-  ani={
-   4,
-  },
+  s=4,
   script=cocreate(function(self)
    wait(5)
    self.ani.pal=parse"8=5"
