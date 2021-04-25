@@ -157,22 +157,6 @@ function rectfillborder(x,y,w,h,b,cborder,cmain)
  rectfillwh(x+b,y+b,w-b*2,h-b*2,cmain)
 end
 
-function dot(x,y,c)
- rect(x,y,x,y,c)
-end
-
--- e.g. enum"foo,bar,baz" sets
--- foo=1,bar=2,baz=3 (globally!)
--- returns a index/lookup table
-function enum(str)
- local index={}
- for i,name in ipairs(split(str,"\n")) do
-  _𝘦𝘯𝘷[name]=i
-  index[i]=name
- end
- return index
-end
-
 normpalette=arr0(0,split"1,2,3,4,5,6,7,8,9,10,11,12,13,14,15")
 altpalette=arr0(0x80,split"0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f")
 palbw=arr0(0,split"1,1,5,5,5,6,7,13,6,7,7,6,13,6,7")

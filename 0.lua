@@ -17,8 +17,9 @@ todo:
 -- print("\^c0\15")
 -- fixedrng ?
 -- use srnd instead of rng_state stuff
+-- s/dot()/pset(), lol
 
--- dev=true
+dev=true
 -- dev_dev_marker=dev
 dev_pal_pick=dev --tab to swap colors
 dev_pal_persist=dev

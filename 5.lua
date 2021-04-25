@@ -33,10 +33,12 @@ function draw_s(self,s)
  spr12(s,x,y,flpx,flpy)
  palt()
  unpal(pal_)
+ if self.holder then
+  rectwh(x,y,11,11,3)
+ end
 end
 
 function xy_from_rot(rot, x,y)
- rot%=4
  return (x or 0)+rotx[rot],(y or 0)+roty[rot]
 end
 

@@ -143,6 +143,7 @@ function load_map()
 end
 
 local DAY_LEN,DAY_AND_DUSK_LEN,TOTAL_LEN=100,120,160
+local CLOCK_LEN=60
 function load_actors()
  if dev_fast_cycle then
   DAY_LEN/=5
@@ -157,7 +158,14 @@ function load_actors()
   z=-100,
   dayt=0,
   nohit=true,
-  post_beat=function(self)
+  script=cocreate(function(self)
+   while 1 do
+    wait(CLOCK_LEN)
+    emit"clock_tick"
+    pq"clock_tick"
+   end
+  end),
+  clock_tick=function(self)
    self.dayt+=1
    if self.dayt==DAY_LEN then
     poke(unpack(split(duskpoke)))
@@ -273,20 +281,20 @@ function actor_player(...)
    if do_voxy(self) then
     -- handle items
     if self.item and self.item.dead then
-     self.item=nil
+     self:set_item()
     end
     if btn(4) and not self.item then
      for dr in all{0,2,1,3} do
       local rot=(self.lastrot+dr)%4
       local item=hit(self.x+rotx[rot],self.y+roty[rot])
       if item and item.move then
-       self.item=item
+       self:set_item(item)
        break
       end
      end
     end
     if not btn(4) and self.item then
-     self.item=nil
+     self:set_item()
     end
 
     -- move
@@ -298,14 +306,13 @@ function actor_player(...)
       self.y+=roty[rot]
      else
       self:move(rot)
-      emit"post_beat"
      end
     end
    end
   end,
   nt_timer=4,
   hp=4,
-  post_beat=function(self)
+  clock_tick=function(self)
    --night terrors
    self.nt_timer-=1
    if self.nt_timer<=0 then
@@ -336,6 +343,7 @@ function actor_player(...)
    end
    return d2
   end,
+  set_item=set_item,
   move=function(self,rot)
    move(self,rot)
 
@@ -347,6 +355,16 @@ function actor_player(...)
   end,
  },...)
  return pl
+end
+
+function set_item(self,item)
+ if self.item then
+  self.item.holder=nil
+ end
+ self.item=item
+ if item then
+  item.holder=self
+ end
 end
 
 function emit(key)
@@ -527,7 +545,7 @@ function actor_fire(...)
   ani={
    20,21,
   },
-  post_beat=function(self)
+  clock_tick=function(self)
    self.ttl-=1
    if self.ttl<=0 then
     die(self)
@@ -618,7 +636,7 @@ function actor_cat(...)
    end
   end,
   bump=noop, -- can't push anything
-  post_beat=function(self)
+  clock_tick=function(self)
    self.timer-=1
    if self.timer==0 then
     if self.tool.x>=(dev_spawn_cat and 2 or 8) then
@@ -640,10 +658,12 @@ function actor_cat(...)
     yield()
    end
   end,
+  set_item=set_item,
   script=cocreate(function(self)
    local tool=self.tool
    ::start::
-    self.x,self.y,self.timer,self.item=-1,-1,dev_spawn_cat and 1 or 32,nil
+    self.x,self.y,self.timer=-1,-1,dev_spawn_cat and 1 or 32
+    self:set_item()
 
     while self.timer>0 do
      --wait for timer
@@ -668,7 +688,7 @@ function actor_cat(...)
      end
      local rot,arrived=get_rot_from_diff(tool.x-self.x,tool.y-self.y)
      if arrived then
-      self.item=tool
+      self:set_item(tool)
       break
      else
       self:seek(rot)
@@ -787,9 +807,10 @@ function move(self,rot, ignore_tiles)
     else
      item:move(r,true)
     end
-    break
+    return -- avoid set_item()
    end
   end
+  self:set_item()
  end
 end
 
