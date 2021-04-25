@@ -103,18 +103,6 @@ function oprint8(msg,x,y,cfront,cback)
  print(msg,x,y,cfront)
 end
 
-function ospr8(s,x,y,c)
- local paldata=pack(peek(0x5f00,16))
- for i=0,15 do
-  pal(i,c)
- end
- for i=0,7 do
-  spr(s,x+dirx[i],y+diry[i])
- end
- poke(0x5f00,unpack(paldata))
- spr(s,x,y)
-end
-
 function tobin(x,friendly)
  local s="0b"
  for i=15,-16,-1 do

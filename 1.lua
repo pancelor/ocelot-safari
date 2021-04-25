@@ -121,6 +121,16 @@ end
 --  local sx,sy=x8*8\_12,y8*8\_12
 --  return sy*_12+sx
 -- end
+function alt_tile(t,hash)
+ local n=1
+ if t==T_WATER or t==T_TREE or t==T_ROCK then
+  n=2
+ elseif t==T_PATH then
+  t=26
+  n=3
+ end
+ return t+hash%n
+end
 
 function hit_tile(x,y)
  local t=mget(x,y)
@@ -247,9 +257,7 @@ function load_actors()
      function f(x) return x&1>0 and 0 or (x&2)-1 end
      dx,dy=f(dx),f(dy)
 
-     if t~=0 then
-      spr12(t,x*_12+dx,y*_12+dy)
-     end
+     spr12(alt_tile(t,x*x+y*y),x*_12+dx,y*_12+dy)
     end
    end
    if dev_grid then
@@ -404,6 +412,7 @@ function actor_machete(...)
  return make_actor({
   z=-10,
   s=2,
+  outline=true,
   init=tool_init,
   move=move,
   -- move=function(self,rot,...)
@@ -439,6 +448,7 @@ function actor_axe(...)
  return make_actor({
   z=-10,
   s=13,
+  outline=true,
   init=tool_init,
   update=do_voxy,
   move=move,
@@ -470,6 +480,7 @@ function actor_pick(...)
  return make_actor({
   z=-10,
   s=16,
+  outline=true,
   init=tool_init,
   update=do_voxy,
   move=move,
@@ -499,6 +510,7 @@ function actor_flint(...)
  return make_actor({
   z=-10,
   s=19,
+  outline=true,
   init=tool_init,
   update=do_voxy,
   move=move,
@@ -531,6 +543,7 @@ end
 
 function actor_wood(...)
  return make_actor({
+  outline=true,
   z=-10,
   s=12,
   move=move,
@@ -556,7 +569,6 @@ function actor_fire(...)
   ttl=TOTAL_LEN-DAY_LEN,
   ani={
    20,21,
-   palt=build_palt(0),
   },
   clock_tick=function(self)
    self.ttl-=1
@@ -585,6 +597,7 @@ function actor_gem(...)
  return make_actor({
   z=-10,
   s=25,
+  outline=true,
   move=move,
   update=function(self)
    if do_voxy(self) then
@@ -600,7 +613,8 @@ end
 function actor_stone(...)
  return make_actor({
   z=-10,
-  s=15,
+  s=29,
+  outline=true,
   move=move,
   update=do_voxy,
   on_pick=die,
@@ -616,8 +630,9 @@ end
 function actor_x(...)
  return make_actor({
   z=-100,
-  nohit=true,
   s=4,
+  outline=true,
+  nohit=true,
   script=cocreate(function(self)
    wait(5)
    self.pal=parse"8=5"

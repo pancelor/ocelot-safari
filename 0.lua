@@ -73,7 +73,7 @@ function _update60()
 end
 
 function _draw()
- cls(4)
+ cls(2)
  drw()
  check_fade()
  -- nocam(draw_brb)()

@@ -12,9 +12,9 @@ function grid(c, ox,oy)
  end
 end
 
-function spr12(s,x,y,flpx,flpy)
+function spr12(s,x,y,flpx)
  local sy,sx=s\_12,s%_12
- sspr(sx*_12,sy*_12,_11,_11,x,y,_11,_11,flpx,flpy)
+ sspr(sx*_12,sy*_12,_11,_11,x,y,_11,_11,flpx)
 end
 
 -- x,y: 12-scaled world pos
@@ -24,18 +24,35 @@ function draw_s(self,s)
  -- ani.perm_vox=ani.perm_vox or rnd(split"0,0,1,-1")
  -- ani.perm_voy=ani.perm_voy or rnd(split"0,0,1,-1")
  local pal_=ani.pal or {}
- palt(ani.palt)
- pal(pal_)
- local s,flpx,flpy=s or ani.s,ani.flpx,ani.flpy
+ local s,flpx=s or ani.s,ani.flpx
  local x,y=
   self.x*_12+(self.vox or 0),
   self.y*_12+(self.voy or 0)
- spr12(s,x,y,flpx,flpy)
+
+ palt(ani.palt or build_palt(0))
+ pal(pal_)
+ if ani.outline then
+  ospr8(s,x,y,0,flpx)
+ else
+  spr12(s,x,y,flpx)
+ end
  palt()
  unpal(pal_)
  if self.holder then
-  rectwh(x,y,11,11,3)
+  rectwh(x-1,y-1,13,13,12)
  end
+end
+
+function ospr8(s,x,y,c,flp)
+ local paldata=pack(peek(0x5f00,16))
+ for i=0,15 do
+  pal(i,c)
+ end
+ for i=0,7 do
+  spr12(s,x+dirx[i],y+diry[i])
+ end
+ poke(0x5f00,unpack(paldata))
+ spr12(s,x,y)
 end
 
 function xy_from_rot(rot, x,y)
