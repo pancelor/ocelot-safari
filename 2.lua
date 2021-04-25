@@ -1,10 +1,5 @@
 -- helper utils
 
---[[
-these can all be deleted individually
-this is the best file :)
-]]
-
 -- needs to be defined first
 function arr0(zero,arr)
  arr[0]=zero
@@ -26,9 +21,6 @@ end
 -- usage:
 --  ?q("p.x=",x,"p.y=",y)
 function q(...)
- --#todo are there nil issues with this?
- -- args.n=count() might help
- -- https://pico-8.fandom.com/wiki/count
  local args=pack(...)
  local s=""
  for i=1,args.n do
@@ -98,17 +90,6 @@ function printcj(text,x,y,col)
  local w=strwidth(text)
  print(text,x-w\2,y,col or color())
 end
-
--- i is an in-between-chars pointer
--- this is not the same sort of
--- number sub() uses
-function splice(str,i,n,new)
- return sub(str,1,i)..(new or "")..sub(str,i+n+1)
-end
---assert(splice("hello",0,1,"b")=="bello")
---assert(splice("hello",1,1)=="hllo")
---assert(splice("hello",4,1,"b")=="hellb")
---assert(splice("hello",2,3,"at")=="heat")
 
 function oprint(msg,x,y,cfront,cback)
  print(msg,x+1,y+1,cback or 0)
@@ -253,21 +234,6 @@ function mbtn_info(mb)
   |boolint(mbtnr(mb),btn_release)
 end
 
-function pq_btn()
- local any=false
- for pl=0,1 do
-  for b=0,6 do
-   if btn(b,pl) then
-    if not any then
-     any=true
-     pq"pq_btn:"
-    end
-    pqf(" btn(%,%)",b,pl)
-   end
-  end
- end
-end
-
 _last_ust_time=0
 function update_screenshot_title()
  if time()-_last_ust_time>=1 then
@@ -323,26 +289,6 @@ function ease_back(t)
  local c3=c1+1;
  return c3*t^3-c1*t^2
 end
-
-function round(x)
- return (x+0.5)\1
-end
-
-function align(n,a)
- -- assert a is a power of 2
- -- assert n is an integer
- return n&~(a-1)
-end
---assert(align(0,4)==0)
---assert(align(1,4)==0)
---assert(align(2,4)==0)
---assert(align(3,4)==0)
---assert(align(4,4)==4)
---assert(align(13,1)==13)
---assert(align(13,2)==12)
---assert(align(13,4)==12)
---assert(align(13,8)==8)
---assert(align(13,16)==0)
 
 --
 -- functionalish stuff
@@ -424,13 +370,6 @@ function concat(...)
 end
 
 function merge_into(obj,...)
- -- careful that both inputs
- -- are either shallow or
- -- single-use!
- -- e.g. def={x={0}} is
- -- a bad idea because
- -- merge(def,{}).x[1]=1 will
- -- modify def.x too!
  local tables={...}
  for t in all(tables) do
   for k,v in pairs(t) do
@@ -530,36 +469,6 @@ function rng_state()
 end
 function restore_rng(...)
  poke4(0x5f44,...)
-end
-
-function clear_cartdata()
- memset(0x5e00,0,64)
-end
-
-function log_cartdata(msg,half)
- cls()
- color(7)
- if (msg) print(msg)
- s=""
- for i=0,half and 31 or 63 do
-  s..=tostr(dget(i),1).." "
-  if i%2==1 then
-   ?qf("%%: %",i<10 and " " or "",i-1,s)
-   s=""
-  end
-  if i%32==31 then
-   stop()
-  end
- end
-end
-
-function minimode(enable)
- if enable==nil then
-  return peek(0x5f2c)&3==3
- else
-  local val=enable and 3 or 0
-  poke(0x5f2c,val)
- end
 end
 
 function lowpass(enable)

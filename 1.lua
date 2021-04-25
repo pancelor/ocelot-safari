@@ -1,26 +1,5 @@
 -- game
 
---[[
-use actor_() as a template when
- making new actors
- 
-things the engine does:
- script
- ani (even without a draw call)
-  w,h,palt,self.z,flp
- update
- init
- denit
- 
-other cool stuff:
- draw_s
- do_voxy
-
-todo: collisions, hitl/hitf?
-need to get more experience
- before baking it into a template
-]]
-
 buts={}
 buts_del={}
 btn_last=0x0
@@ -267,7 +246,6 @@ function actor_player(...)
   move=function(self,rot)
    move(self,rot)
 
-   -- flp
    if rot==0 then
     self.flpx=false
    elseif rot==2 then
@@ -428,27 +406,6 @@ function actor_mag(...)
  },...)
 end
 
--- function actor_vine(...)
---  return make_actor({
---   z=-10,
---   s=3,
---   -- palt=build_palt(0),
---   on_machete=die,
---  },...)
--- end
-
--- function actor_tree(...)
---  return make_actor({
---   z=-10,
---   s=5,
---   palt=build_palt(0),
---   on_axe=function(self)
---    actor_wood{x=self.x,y=self.y}
---    die(self)
---   end,
---  },...)
--- end
-
 function actor_wood(...)
  return make_actor({
   z=-10,
@@ -480,18 +437,6 @@ function actor_gem(...)
   end,
  },...)
 end
-
--- function actor_rock(...)
---  return make_actor({
---   z=-10,
---   s=14,
---   palt=build_palt(0),
---   on_pick=function(self)
---    actor_stone{x=self.x,y=self.y}
---    die(self)
---   end,
---  },...)
--- end
 
 function actor_stone(...)
  return make_actor({
