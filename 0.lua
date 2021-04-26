@@ -30,6 +30,7 @@ dev_pal_persist=dev
 -- dev_grid=dev
 -- dev_instawin=dev and 0
 -- dev_rng={0x2f90.fd80,0xa4b8.8036}
+show_intro=10
 
 function dev_init()
  if dev_pal_persist then
@@ -77,12 +78,11 @@ function _draw()
  cls(2)
  drw()
  check_fade()
- -- nocam(draw_brb)()
-end
-
-function draw_brb()
- oprint8("break time!",40,40,3,0)
- oprint8("back in 10~20min",40,50,3,0)
+ if show_intro>0 then
+  local text="ocelot safari"
+  local x,y=cprintcj(text,64,64)
+  oprint8(text,x+%0x5f28,y+%0x5f2a,6,9)
+ end
 end
 
 function init_game()

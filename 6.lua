@@ -7,19 +7,23 @@
 * swipes?
 * music
 * name
- ocelots love tool
+  ocelot safari
 
 sfx
-63 
-62 
-61 hurt
-60 
+63 chop/pick x
+62 match x
+61 hurt x
+60 step x
+59 cat meow x
+58 machete slash x
+57 axe x
+56 pick
 
 ## bugs
 
 sometimes cats get stuck doing nothing...?? seemed to stand on top of his tool and get broken
  happens near edge of screen
- 
+
 ## tasks
 
 x make sprites: rocks, pick, stone

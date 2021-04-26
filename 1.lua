@@ -267,16 +267,6 @@ function load_actors()
  }
 end
 
--- function fixedrng(f)
---  local rng0,rng1=rng_state()
---  return function(...)
---   local rnga,rngb=rng_state()
---   restore_rng(rng0,rng1)
---   f(...)
---   restore_rng(rnga,rngb)
---  end
--- end
-
 function actor_player(...)
  pl=make_actor({
   z=-20,
@@ -331,6 +321,8 @@ function actor_player(...)
   nt_timer=0,
   hp=4,
   post_move=function(self)
+   show_intro=approach(show_intro,0)
+   sfx(60)
    --night terrors
    self.nt_timer-=1
    if self.nt_timer<=0 then
@@ -397,17 +389,20 @@ function emit(key)
  end
 end
 
-function apply_event(self,name,name2,rot,x,y)
+function apply_event(self,sfx_,name,name2,rot,x,y)
  local tile=hit_tile(x,y)
  if tile and self.bump_tile then
-  self:bump_tile(tile,x,y) 
+  self:bump_tile(tile,x,y)
+  sfx(sfx_)
  end
  -- no tile change
  if tile==hit_tile(x,y) then
   local ob=hit(x,y)
   if ob and ob[name] then
+   sfx(sfx_)
    ob[name](ob,rot)
   elseif ob and ob[name2] then
+   sfx(sfx_)
    ob[name2](ob,rot)
   end
  end
@@ -436,12 +431,13 @@ function actor_machete(...)
    --  local r,x,y=unpack(p)
    --  local tile=tile_hit(x,y)
    -- end
-   apply_event(self,"on_machete","move",plrot2,xy_from_rot(plrot2,self.prevx,self.prevy))
-   apply_event(self,"on_machete","move",plrot2,xy_from_rot(plrot2,self.x,self.y))
-   apply_event(self,"on_machete","move",myrot,xy_from_rot(myrot,self.x,self.y))
+   apply_event(self,58,"on_machete","move",plrot2,xy_from_rot(plrot2,self.prevx,self.prevy))
+   apply_event(self,58,"on_machete","move",plrot2,xy_from_rot(plrot2,self.x,self.y))
+   apply_event(self,58,"on_machete","move",myrot,xy_from_rot(myrot,self.x,self.y))
   end,
   bump_tile=function(self,tile,x,y)
    if tile==T_VINE then
+    sfx(58)
     mset(x,y,T_PATH)
     actor_x{x=x,y=y}
    end
@@ -461,9 +457,9 @@ function actor_axe(...)
   swing=function(self,myrot,plrot,ignore_tiles)
    self:move(myrot,ignore_tiles)
    local plrot2=(plrot+2)%4
-   apply_event(self,"on_axe","move",myrot,xy_from_rot(myrot,self.x,self.y))
-   apply_event(self,"on_axe","move",plrot2,xy_from_rot(plrot2,self.x,self.y))
-   apply_event(self,"on_axe","move",myrot,xy_from_rot(myrot,xy_from_rot(plrot2,self.x,self.y)))
+   apply_event(self,57,"on_axe","move",myrot,xy_from_rot(myrot,self.x,self.y))
+   apply_event(self,57,"on_axe","move",plrot2,xy_from_rot(plrot2,self.x,self.y))
+   apply_event(self,57,"on_axe","move",myrot,xy_from_rot(myrot,xy_from_rot(plrot2,self.x,self.y)))
   end,
   bump=function(self,ob,rot)
    if ob.on_axe then
@@ -493,7 +489,7 @@ function actor_pick(...)
   swing=function(self,myrot,plrot,ignore_tiles)
    self:move(myrot,ignore_tiles)
    local plrot2=(plrot+2)%4
-   apply_event(self,"on_pick","move",myrot,xy_from_rot(myrot,self.x,self.y))
+   apply_event(self,56,"on_pick","move",myrot,xy_from_rot(myrot,self.x,self.y))
   end,
   bump=function(self,ob,rot)
    if ob.on_pick then
@@ -547,6 +543,12 @@ end
 --  },...)
 -- end
 
+-- function init_sfx(n)
+--  return function()
+--   sfx(n)
+--  end
+-- end
+
 function actor_wood(...)
  return make_actor({
   outline=true,
@@ -583,6 +585,7 @@ function actor_fire(...)
    end
   end,
   init=function(self)
+   sfx(62)
    self:surround(T_LIGHT)
   end,
   denit=function(self)
@@ -705,6 +708,7 @@ function actor_cat(...)
    for i=1,t do
     if self.spook then
      -- pq"spooked"
+     sfx(59)
      return true
     end
     yield()
