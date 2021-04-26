@@ -32,15 +32,12 @@ function draw_s(self,s)
  palt(ani.palt or build_palt(0))
  pal(pal_)
  if ani.outline then
-  ospr8(s,x,y,0,flpx)
+  ospr8(s,x,y,self.holder and 9 or 0,flpx)
  else
   spr12(s,x,y,flpx)
  end
  palt()
  unpal(pal_)
- if self.holder then
-  rectwh(x-1,y-1,13,13,12)
- end
 end
 
 function ospr8(s,x,y,c,flp)
@@ -49,10 +46,10 @@ function ospr8(s,x,y,c,flp)
   pal(i,c)
  end
  for i=0,7 do
-  spr12(s,x+dirx[i],y+diry[i])
+  spr12(s,x+dirx[i],y+diry[i],flp)
  end
  poke(0x5f00,unpack(paldata))
- spr12(s,x,y)
+ spr12(s,x,y,flp)
 end
 
 function xy_from_rot(rot, x,y)

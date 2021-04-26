@@ -28,6 +28,7 @@ dev_pal_persist=dev
 -- dev_ghost=dev
 -- dev_dev_marker=dev
 -- dev_grid=dev
+-- dev_instawin=dev and 0
 -- dev_rng={0x2f90.fd80,0xa4b8.8036}
 
 function dev_init()
@@ -90,7 +91,7 @@ function init_game()
  worldw,worldh=64,20
  do_z_sort=false
  load_actors()
- -- fade_t=1 --doesn't work with custom palettes
+ fade_t=1
 end
 
 function upd_game()
@@ -146,8 +147,11 @@ function upd_gover()
  end
 end
 function drw_gover()
- cls()
- printcj(gover_won and "win!" or "game over",64,64,7)
+ poke(unpack(split(nightpoke)))
+ drw_game()
+ local text=gover_won and "you win!" or "game over"
+ local x,y=cprintcj(text,64,64)
+ oprint8(text,x+%0x5f28,y+%0x5f2a,0,7)
 end
 
 function make_actor(...)

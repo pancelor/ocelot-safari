@@ -1,17 +1,26 @@
 -- notes
 --[[
 
+## final todo
+
+* sfx
+* swipes?
+* music
+* name
+ ocelots love tool
+
 sfx
 63 
 62 
 61 hurt
 60 
 
-bugs:
+## bugs
 
 sometimes cats get stuck doing nothing...?? seemed to stand on top of his tool and get broken
-
-tasks:
+ happens near edge of screen
+ 
+## tasks
 
 x make sprites: rocks, pick, stone
  (and make actors)
@@ -32,7 +41,9 @@ x ocelots!
 * gover
 * fade fix
 * fix 3 pals
+
 * tutorial
+
 * music/sfx
 * art pass
  * alt sprites
@@ -52,7 +63,7 @@ jungle fever
 tiger tiger burning bright
 stop it, ocelot!
 stop that ocelot!
-ocelot exedition
+ocelot expedition
 an ocelot of problems
 
 ]]

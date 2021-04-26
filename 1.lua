@@ -123,7 +123,7 @@ end
 -- end
 function alt_tile(t,hash)
  local n=1
- if t==T_WATER or t==T_TREE or t==T_ROCK then
+ if t==T_WATER or t==T_TREE or t==T_ROCK or t==T_VINE then
   n=2
  elseif t==T_PATH then
   t=26
@@ -157,9 +157,9 @@ local DAY_LEN,DAY_AND_DUSK_LEN,TOTAL_LEN=100,130,160
 local CLOCK_LEN=60
 function load_actors()
  if dev_fast_cycle then
-  DAY_LEN/=5
-  DAY_AND_DUSK_LEN/=5
-  TOTAL_LEN/=5
+  DAY_LEN/=10
+  DAY_AND_DUSK_LEN/=10
+  TOTAL_LEN/=10
  end
 
  map_gen()
@@ -196,9 +196,9 @@ function load_actors()
   draw=nocam(function(self)
    -- day meter
    local x,y1,w,h,y2=32,120,63,6,2
-   rectfillwh(x+1,y1,w,h,1) --night (full)
-   rectfillwh(x+1,y1,w*DAY_AND_DUSK_LEN/TOTAL_LEN,h,2) --dusk
-   rectfillwh(x+1,y1,w*DAY_LEN/TOTAL_LEN,h,11) --day
+   rectfillwh(x+1,y1,w,h,13) --night (full)
+   rectfillwh(x+1,y1,w*DAY_AND_DUSK_LEN/TOTAL_LEN,h,15) --dusk
+   rectfillwh(x+1,y1,w*DAY_LEN/TOTAL_LEN,h,6) --day
    rectwh(x+1+self.dayt/TOTAL_LEN*w,y1,1,h,8) -- dayt marker
    rectwh(x,y1,w+2,h,0) --border
    for x=32,96,8 do
@@ -280,6 +280,7 @@ end
 function actor_player(...)
  pl=make_actor({
   z=-20,
+  outline=true,
   s=1,
   -- item=nil,
   lastrot=0,
@@ -288,6 +289,11 @@ function actor_player(...)
   end,
   update=function(self)
    update_btns()
+
+   if dev_instawin and btnp(5) then
+    init_gover(dev_instawin==1)
+    return 
+   end
 
    if do_voxy(self) then
     -- handle items
@@ -345,7 +351,7 @@ function actor_player(...)
     self.hp-=1
     sfx(61)
     if self.hp<0 then
-     fadeout()
+     die(self)
      init_gover()
     end
    end
@@ -602,7 +608,6 @@ function actor_gem(...)
   update=function(self)
    if do_voxy(self) then
     if self.x<=1 then
-     fadeout()
      init_gover(true)
     end
    end
@@ -630,7 +635,7 @@ end
 function actor_x(...)
  return make_actor({
   z=-100,
-  s=4,
+  s=30,
   outline=true,
   nohit=true,
   script=cocreate(function(self)
@@ -653,6 +658,7 @@ function actor_cat(...)
   nohit=true,
   ani={
    36,37,
+   outline=true,
   },
   vox=0,
   voy=0,
@@ -776,28 +782,6 @@ function actor_cat(...)
   end),
  },...)
 end
-
--- function actor_swipe(...)
---  return make_actor({
---   z=-100,
---   nohit=true,
---   s=4,
---   script=cocreate(function(self)
---    wait(5)
---    self.ani.pal=parse"8=5"
---    wait(5)
---    die(self)
---   end),
---   draw=function(self)
---    local x0,y0=self.x,self.y
---    pal(self.ani.pal or {})
---    spr12(4,toscreen(xy_from_rot(self.rot1,x0,y0)))
---    spr12(4,toscreen(xy_from_rot(self.rot2+2,x0,y0)))
---    spr12(4,toscreen(xy_from_rot(self.rot1+2,xy_from_rot(self.rot2+2,x0,y0))))
---    unpal(self.ani.pal or {})
---   end,
---  },...)
--- end
 
 function get_rot_from_diff(dx,dy)
  local ax,ay=abs(dx),abs(dy)

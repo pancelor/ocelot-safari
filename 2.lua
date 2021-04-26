@@ -84,11 +84,8 @@ function strwidth(s)
  return l*4
 end
 
--- print center justified
-function printcj(text,x,y,col)
- text=tostr(text)
- local w=strwidth(text)
- print(text,x-w\2,y,col or color())
+function cprintcj(text,x,y)
+ return x-strwidth(tostr(text))\2,y
 end
 
 function oprint(msg,x,y,cfront,cback)
@@ -147,7 +144,6 @@ end
 
 normpalette=arr0(0,split"1,2,3,4,5,6,7,8,9,10,11,12,13,14,15")
 altpalette=arr0(0x80,split"0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f")
-palbw=arr0(0,split"1,1,5,5,5,6,7,13,6,7,7,6,13,6,7")
 fade_pal=split"0,1,1,2,1,13,6,4,4,9,3,13,1,13,14"
 
 function unpal(p)
@@ -537,15 +533,23 @@ end
 
 fade_t=0 --set this to 1 in init
 function applyfade(mode,_fade_t)
- local p,kmax,col,k=flr(mid(_fade_t or fade_t,1)*100)
- for j=1,15 do
-  col=j
-  kmax=(p+j*1.46)\22
-  for k=1,kmax do
-   col=fade_pal[col]
-  end
-  pal(j,col,mode or 1)
- end
+  local t=mid(_fade_t or fade_t,1)
+  local bwpoke="0x5f10,0,1,1,0x82,0x82,0x82,0x81,0x80,0x80,0x81,0x80,0x80,0x81,0x80,0x81,0x80"
+  poke(unpack(split(
+      t<0.16 and daypoke
+   or t<0.32 and duskpoke
+   or t<0.48 and nightpoke
+   or bwpoke)))
+
+ -- local p,kmax,col,k=flr(mid(_fade_t or fade_t,1)*100)
+ -- for j=1,15 do
+ --  col=j
+ --  kmax=(p+j*1.46)\22
+ --  for k=1,kmax do
+ --   col=fade_pal[col]
+ --  end
+ --  pal(j,col,mode or 1)
+ -- end
 end
 function check_fade(spd)
  if fade_t>0 then
