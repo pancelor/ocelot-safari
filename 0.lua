@@ -1,22 +1,8 @@
 -- ocelot safari
 --  BY PANCELOR
 
---[[
-todo:
- quitting out from upd_gover is hella borked for some reason
-  it stalls during drw_game on the first frame...
-  maybe b/c it doesn't get a chance to run upd_game that frame??
-]]
-
---todo: t3:
--- print("\^c0\15")
--- fixedrng ?
--- use srnd instead of rng_state stuff
--- s/dot()/pset(), lol
-
 -- dev=true
-dev_pal_pick=dev --tab to swap colors
--- dev_pal_persist=dev
+dev_pal_persist=dev
 -- dev_fast_cycle=dev
 dev_spawn_cat=dev
 -- dev_spawn_gem=dev
@@ -143,6 +129,11 @@ end
 function init_gover(won)
  upd,drw=upd_gover,drw_gover
  gover_won=won
+ if gover_won then
+  sfx(63)
+ else
+  poke(unpack(split(nightpoke)))
+ end
 end
 function upd_gover()
  if btnp(5) then
@@ -151,7 +142,6 @@ function upd_gover()
  end
 end
 function drw_gover()
- poke(unpack(split(nightpoke)))
  drw_game()
  local text=gover_won and "you win!" or "game over"
  local x,y=cprintcj(text,64,64)

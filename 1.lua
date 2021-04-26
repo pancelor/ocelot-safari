@@ -267,7 +267,7 @@ function actor_player(...)
  pl=make_actor({
   z=-20,
   ani={
-   outline=true,
+   outline=true,speed=10,
    1,
   },
   -- item=nil,
@@ -311,22 +311,23 @@ function actor_player(...)
       self.y+=roty[rot]
      else
       self:move(rot)
+      show_intro=approach(show_intro,0)
+      sfx(60)
+      self.ani.s=7
+      emit"post_move"
      end
-     self:post_move()
     end
    end
   end,
   nt_timer=0,
   hp=4,
-  post_move=function(self)
-   show_intro=approach(show_intro,0)
-   sfx(60)
+  clock_tick=function(self)
    --night terrors
    self.nt_timer-=1
    if self.nt_timer<=0 then
     if hud:is_night() then
      self.nt_timer=2
-     self:clock_tick()
+     self:fire_damage()
     else
      -- recover during day
      self.nt_timer=32
@@ -334,8 +335,7 @@ function actor_player(...)
     end
    end
   end,
-  --fire_damage
-  clock_tick=function(self)
+  fire_damage=function(self)
    if hud:is_night() and self:fire_dist2()>2 then
     cam:shake()
     self.hp-=1
@@ -679,7 +679,8 @@ function actor_cat(...)
      self.timer=6
     end
    end
-
+  end,
+  post_move=function(self)
    local SPOOK_D2=2
    self.spook=dist2(self.x-pl.x,self.y-pl.y)<=SPOOK_D2
   end,
@@ -752,14 +753,13 @@ function actor_cat(...)
 
     -- drop tool at start
     if self.item==tool then
-     while not offscreen(tool.x0,tool.y0) do
-      yield()
+     if offscreen(tool.x0,tool.y0) then
+      -- might overlap something; that's fine
+      tool.x,tool.y=tool.x0,tool.y0
+     else
+      tool.x=mid(tool.x,worldw-1)
+      tool.y=mid(tool.y,worldh-1)
      end
-     local ob=hit(tool.x0,tool.y0)
-     if ob then
-      die(ob)
-     end
-     tool.x,tool.y=tool.x0,tool.y0
     end
    goto start
   end),
@@ -823,7 +823,11 @@ function move(self,rot, ignore_tiles)
     return -- avoid set_item()
    end
   end
-  self:set_item()
+  -- pq(dx,dy)
+  if dx~=0 or dy~=0 then
+   -- pq("drop")
+   self:set_item()
+  end
  end
 end
 

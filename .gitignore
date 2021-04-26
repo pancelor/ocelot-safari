@@ -1,4 +1,5 @@
-_html
+*_html
+*.zip
 push.sh
 *.png
 *.bin/
