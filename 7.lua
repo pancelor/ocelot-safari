@@ -122,15 +122,6 @@ function gen_adjust()
   end
  end
 end
-  
---   for i=i0,i1 do
---    for d=1,d1 do
---     local x,y=x0+d*dirx[i],y0+d*diry[i]
---     if rnd()<C_SPREAD then
---      mset(x,y,t0)
---     end
---    end
---   end
 
 function mapfindall(t)
  local res={}
@@ -143,26 +134,3 @@ function mapfindall(t)
  end
  return res
 end
-
--- function countwalls(x,y,target, d)
---  local n=0
---  for i=0,7 do
---   local dx,dy=getdir(i)
---   for j=1,(d or 1) do
---    if mget(x+j*dx,y+j*dy)==target then
---     n+=1
---    end
---   end
---  end
---  return n
--- end
-
--- function mapbits(x,y,target)
---  local res=0
---  for i=0,7 do
---   if mget(x+dirx[i],y+diry[i])==target then
---    res+=1<<i
---   end
---  end
---  return res
--- end

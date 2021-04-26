@@ -354,35 +354,6 @@ function sort(arr,f)
  end
 end
 
-function shuffle(arr)
- -- fisher-yates
- for i=#arr,2,-1 do
-  local j=1+rnd(i)\1
-  arr[i],arr[j]=arr[j],arr[i]
- end
-end
-
-function choose_weighted(opts)
- -- given opts that looks like {
- --  ch_ground=0.3,
- --  ch_key=0.1,
- --  ch_ladder=0.6,
- -- }, returns a key,
- -- weighted based on vals
- local sum=0
- for k,v in pairs(opts) do
-  sum+=v
- end
- local rng=rnd()*sum
- for k,v in pairs(opts) do
-  rng-=v
-  if rng<0 then
-   return k
-  end
- end
- assert(false)
-end
-
 function rndr(a,b)
  if b==nil then a,b=0,a end
  return rnd(b-a)+a
@@ -442,32 +413,6 @@ function build_palt(...)
   bits|=1<<(15-c)
  end
  return bits
-end
-
---
--- benchmarking
---
-
-function bench0()
- _bench0,_bench1,_bench2=stat(99),stat(1),stat(2)
- pq("bench start")
-end
-function bench1()
- local d0,d1,d2=stat(99)-_bench0,stat(1)-_bench1,stat(2)-_bench2
- pq("bench end")
- pq("  ",d0,"kb")
- pq("  ",d1*100\1,"% cpu")
- pq("  ",d2*100\1,"% cpu (sys)")
-end
-
-_cpu_flag=0
-function cpu_flag(x)
- _cpu_flag+=1
- if x then
-  _cpu_flag=0
-  pq("===")
- end
- pq(_cpu_flag,"stat(1):",stat(1)*100)
 end
 
 --
@@ -540,16 +485,6 @@ function applyfade(mode,_fade_t)
    or t<0.32 and duskpoke
    or t<0.48 and nightpoke
    or bwpoke)))
-
- -- local p,kmax,col,k=flr(mid(_fade_t or fade_t,1)*100)
- -- for j=1,15 do
- --  col=j
- --  kmax=(p+j*1.46)\22
- --  for k=1,kmax do
- --   col=fade_pal[col]
- --  end
- --  pal(j,col,mode or 1)
- -- end
 end
 function check_fade(spd)
  if fade_t>0 then

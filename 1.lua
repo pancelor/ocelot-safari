@@ -245,7 +245,6 @@ function load_actors()
    self.voy/=2
   end,
   draw=function(self)
-   -- local cx,cy=peek2(0x5f28,2)
    local top=128\_12+1
    for dy=0,top do
     for dx=0,top do
@@ -260,9 +259,6 @@ function load_actors()
      spr12(alt_tile(t,x*x+y*y),x*_12+dx,y*_12+dy)
     end
    end
-   if dev_grid then
-    grid(10)
-   end
   end,
  }
 end
@@ -270,8 +266,10 @@ end
 function actor_player(...)
  pl=make_actor({
   z=-20,
-  outline=true,
-  s=1,
+  ani={
+   outline=true,
+   1,
+  },
   -- item=nil,
   lastrot=0,
   init=function(self)
@@ -362,9 +360,9 @@ function actor_player(...)
    move(self,rot)
 
    if rot==0 then
-    self.flpx=false
+    self.ani.flpx=false
    elseif rot==2 then
-    self.flpx=true
+    self.ani.flpx=true
    end
   end,
  },...)
@@ -436,8 +434,8 @@ function actor_machete(...)
    apply_event(self,58,"on_machete","move",myrot,xy_from_rot(myrot,self.x,self.y))
   end,
   bump_tile=function(self,tile,x,y)
+   sfx(58)
    if tile==T_VINE then
-    sfx(58)
     mset(x,y,T_PATH)
     actor_x{x=x,y=y}
    end
@@ -462,6 +460,7 @@ function actor_axe(...)
    apply_event(self,57,"on_axe","move",myrot,xy_from_rot(myrot,xy_from_rot(plrot2,self.x,self.y)))
   end,
   bump=function(self,ob,rot)
+   sfx(57)
    if ob.on_axe then
     ob:on_axe(rot)
    elseif ob.move then
@@ -492,6 +491,7 @@ function actor_pick(...)
    apply_event(self,56,"on_pick","move",myrot,xy_from_rot(myrot,self.x,self.y))
   end,
   bump=function(self,ob,rot)
+   sfx(56)
    if ob.on_pick then
     ob:on_pick(rot)
    elseif ob.move then
@@ -517,6 +517,7 @@ function actor_flint(...)
   update=do_voxy,
   move=move,
   bump=function(self,ob,rot)
+   sfx(62)
    if ob.on_flint then
     ob:on_flint(self,rot)
    elseif ob.move then
@@ -525,29 +526,6 @@ function actor_flint(...)
   end,
  },...)
 end
-
--- function actor_mag(...)
---  return make_actor({
---   z=-10,
---   s=24,
---   init=tool_init,
---   update=do_voxy,
---   move=move,
---   bump=function(self,ob,rot)
---    if ob.on_mag then
---     ob:on_mag(self,rot)
---    elseif ob.move then
---     ob:move(rot)
---    end
---   end,
---  },...)
--- end
-
--- function init_sfx(n)
---  return function()
---   sfx(n)
---  end
--- end
 
 function actor_wood(...)
  return make_actor({
@@ -559,6 +537,7 @@ function actor_wood(...)
   on_axe=die,
   bump_tile=function(self,tile,x,y)
    if tile==T_WATER then
+    sfx(55)
     mset(x,y,T_PATH)
     die(self)
    end
@@ -585,7 +564,6 @@ function actor_fire(...)
    end
   end,
   init=function(self)
-   sfx(62)
    self:surround(T_LIGHT)
   end,
   denit=function(self)
@@ -628,6 +606,7 @@ function actor_stone(...)
   on_pick=die,
   bump_tile=function(self,tile,x,y)
    if tile==T_WATER then
+    sfx(55)
     mset(x,y,T_PATH)
     die(self)
    end

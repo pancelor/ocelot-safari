@@ -1,12 +1,7 @@
--- template
+-- ocelot safari
 --  BY PANCELOR
 
 --[[
-this engine uses an actor-based
- system designed to be as simple
- as possible, not efficient.
-replace when needed
-
 todo:
  quitting out from upd_gover is hella borked for some reason
   it stalls during drw_game on the first frame...
@@ -19,24 +14,24 @@ todo:
 -- use srnd instead of rng_state stuff
 -- s/dot()/pset(), lol
 
-dev=true
+-- dev=true
 dev_pal_pick=dev --tab to swap colors
-dev_pal_persist=dev
+-- dev_pal_persist=dev
 -- dev_fast_cycle=dev
--- dev_spawn_cat=dev
+dev_spawn_cat=dev
 -- dev_spawn_gem=dev
 -- dev_ghost=dev
 -- dev_dev_marker=dev
--- dev_grid=dev
 -- dev_instawin=dev and 0
 -- dev_rng={0x2f90.fd80,0xa4b8.8036}
-show_intro=10
+
+show_intro=8 --8 player steps
+f_mute=false
 
 function dev_init()
  if dev_pal_persist then
   poke(0x5f2e,1)
  end
- poke(0x5f2d,1) --enable mouse
 
  if dev_rng then
   restore_rng(unpack(dev_rng))
@@ -47,6 +42,16 @@ end
 
 function _init()
  printh("---")
+ -- music(0,1000)
+
+ -- menuitem(2,"toggle music",function()
+ --  f_mute=not f_mute
+ --  if f_mute then
+ --   music(-1,1000)
+ --  else
+ --   music(0,1000)
+ --  end
+ -- end)
 
  --screen palette
  daypoke="0x5f10,0x0,0x84,0x4,0x8c,0x86,0x6,0x87,0x7,0x8,0x89,0x8b,0xb,0x8a,0x82,0xd,0x83"
@@ -69,7 +74,6 @@ function _init()
  end
 end
 function _update60()
- check_palpick()
  update_screenshot_title()
  upd()
 end
