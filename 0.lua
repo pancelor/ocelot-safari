@@ -130,7 +130,7 @@ function init_gover(won)
  upd,drw=upd_gover,drw_gover
  gover_won=won
  if gover_won then
-  sfx(63)
+  sfx(56)
  else
   poke(unpack(split(nightpoke)))
  end

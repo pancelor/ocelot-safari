@@ -434,8 +434,8 @@ function actor_machete(...)
    apply_event(self,58,"on_machete","move",myrot,xy_from_rot(myrot,self.x,self.y))
   end,
   bump_tile=function(self,tile,x,y)
-   sfx(58)
    if tile==T_VINE then
+    sfx(58)
     mset(x,y,T_PATH)
     actor_x{x=x,y=y}
    end
@@ -460,8 +460,8 @@ function actor_axe(...)
    apply_event(self,57,"on_axe","move",myrot,xy_from_rot(myrot,xy_from_rot(plrot2,self.x,self.y)))
   end,
   bump=function(self,ob,rot)
-   sfx(57)
    if ob.on_axe then
+    sfx(57)
     ob:on_axe(rot)
    elseif ob.move then
     ob:move(rot)
@@ -469,6 +469,7 @@ function actor_axe(...)
   end,
   bump_tile=function(self,tile,x,y)
    if tile==T_TREE then
+    sfx(57)
     mset(x,y,T_PATH)
     actor_x{x=x,y=y}
     actor_wood{x=x,y=y}
@@ -491,8 +492,8 @@ function actor_pick(...)
    apply_event(self,56,"on_pick","move",myrot,xy_from_rot(myrot,self.x,self.y))
   end,
   bump=function(self,ob,rot)
-   sfx(56)
    if ob.on_pick then
+    sfx(56)
     ob:on_pick(rot)
    elseif ob.move then
     ob:move(rot)
@@ -500,6 +501,7 @@ function actor_pick(...)
   end,
   bump_tile=function(self,tile,x,y)
    if tile==T_ROCK then
+    sfx(56)
     mset(x,y,T_PATH)
     actor_x{x=x,y=y}
     actor_stone{x=x,y=y}
@@ -517,8 +519,8 @@ function actor_flint(...)
   update=do_voxy,
   move=move,
   bump=function(self,ob,rot)
-   sfx(62)
    if ob.on_flint then
+    sfx(62)
     ob:on_flint(self,rot)
    elseif ob.move then
     ob:move(rot)
@@ -725,6 +727,7 @@ function actor_cat(...)
      local rot,arrived=get_rot_from_diff(tool.x-self.x,tool.y-self.y)
      if arrived then
       self:set_item(tool)
+      sfx(59)
       break
      else
       self:seek(rot)
