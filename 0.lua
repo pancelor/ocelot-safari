@@ -138,7 +138,7 @@ end
 function upd_gover()
  if btnp(5) then
   fadeout()
-  init_game()
+  extcmd("reset")
  end
 end
 function drw_gover()
