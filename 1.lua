@@ -219,6 +219,7 @@ function load_actors()
    end
   end),
  }
+ camera(128,pl.y*_12-61)
  cam=make_actor{
   nohit=true,
   z=1,
